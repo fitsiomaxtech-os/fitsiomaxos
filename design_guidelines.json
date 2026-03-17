@@ -1,0 +1,202 @@
+{
+  "design_system": {
+    "identity": {
+      "name": "PhysioFit CCRM",
+      "archetype": "The Performance Pro (Light Mode Variant)",
+      "tone": "Clinical Precision meets Athletic Energy",
+      "core_values": ["Trust", "Efficiency", "Movement", "Clarity"],
+      "theme_strategy": "Light Mode Primary. Clean white surfaces for data density, deep slate for navigation, vibrant accents for status."
+    },
+    "typography": {
+      "font_family": {
+        "heading": "Manrope, sans-serif",
+        "body": "Inter, sans-serif",
+        "mono": "JetBrains Mono, monospace"
+      },
+      "usage_rules": {
+        "headings": "font-heading font-bold tracking-tight text-slate-900. H1=text-4xl, H2=text-3xl.",
+        "subheadings": "font-heading font-medium text-slate-500 tracking-normal uppercase text-sm.",
+        "body": "font-body text-slate-600 leading-relaxed.",
+        "data_cells": "font-body text-sm font-medium text-slate-700."
+      },
+      "imports": [
+        "@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');"
+      ]
+    },
+    "colors": {
+      "palette": {
+        "primary": {
+          "DEFAULT": "#0f172a",
+          "foreground": "#f8fafc",
+          "hover": "#1e293b"
+        },
+        "secondary": {
+          "DEFAULT": "#f1f5f9",
+          "foreground": "#0f172a"
+        },
+        "accent": {
+          "sales": "#f97316",
+          "health": "#10b981",
+          "admin": "#6366f1"
+        },
+        "background": {
+          "DEFAULT": "#ffffff",
+          "subtle": "#f8fafc",
+          "paper": "#ffffff"
+        },
+        "status": {
+          "success": "#10b981",
+          "warning": "#f59e0b",
+          "error": "#ef4444",
+          "info": "#3b82f6"
+        }
+      },
+      "tailwind_config_extension": {
+        "colors": {
+          "slate": {
+            "850": "#162032"
+          }
+        }
+      },
+      "forbidden_colors": [
+        "#1B93A4",
+        "#7351B7"
+      ]
+    },
+    "layout": {
+      "grid_system": "Bento Grid Mode B (High Density)",
+      "spacing": {
+        "container_padding": "p-6 md:p-8",
+        "card_padding": "p-6",
+        "gap": "gap-6"
+      },
+      "radius": {
+        "default": "rounded-lg",
+        "button": "rounded-md",
+        "card": "rounded-xl"
+      },
+      "elevation": {
+        "card": "shadow-sm border border-slate-100",
+        "dropdown": "shadow-lg border border-slate-200",
+        "modal": "shadow-xl border border-slate-200"
+      }
+    },
+    "components": {
+      "buttons": {
+        "primary": "bg-primary text-primary-foreground hover:bg-slate-800 shadow-sm",
+        "secondary": "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50",
+        "ghost": "hover:bg-slate-100 text-slate-600"
+      },
+      "cards": {
+        "base": "bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden",
+        "metric": "p-6 flex flex-col justify-between h-full"
+      },
+      "inputs": {
+        "base": "h-10 rounded-md border-slate-200 focus:ring-2 focus:ring-primary/20 bg-white"
+      },
+      "badges": {
+        "base": "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+        "success": "bg-emerald-100 text-emerald-800",
+        "warning": "bg-amber-100 text-amber-800",
+        "slate": "bg-slate-100 text-slate-800"
+      }
+    },
+    "motion": {
+      "transition_base": "transition-all duration-200 ease-in-out",
+      "hover_lift": "hover:-translate-y-1 hover:shadow-md",
+      "page_enter": "animate-in fade-in slide-in-from-bottom-4 duration-500"
+    }
+  },
+  "assets": {
+    "images": {
+      "login_hero": {
+        "url": "https://images.unsplash.com/photo-1764314138160-5f04f4a50dae?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "alt": "Physiotherapy session in clinic"
+      },
+      "dashboard_context": {
+        "url": "https://images.unsplash.com/photo-1761971975769-97e598bf526b?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "alt": "Modern gym interior with equipment"
+      },
+      "map_placeholder": {
+        "url": "https://images.unsplash.com/photo-1717700299581-c2fc3fad4ee8?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "alt": "Abstract city map for branches"
+      },
+      "avatars": [
+        {
+          "role": "physio",
+          "url": "https://images.unsplash.com/photo-1750175614279-2f417fbe0722?crop=entropy&cs=srgb&fm=jpg&q=85",
+          "alt": "Smiling physiotherapist"
+        },
+        {
+          "role": "trainer",
+          "url": "https://images.unsplash.com/photo-1628935291759-bbaf33a66dc6?crop=entropy&cs=srgb&fm=jpg&q=85",
+          "alt": "Fitness trainer in gym"
+        }
+      ]
+    },
+    "icons": {
+      "library": "lucide-react",
+      "style": "stroke-width={1.5} size={20}"
+    }
+  },
+  "page_strategies": {
+    "login": {
+      "layout": "Split Screen. Left: Branding + Form (White). Right: Hero Image (Physio/Gym) with overlay.",
+      "elements": "Logo, Role Selector (Tabs: Admin, Sales, Pre-sales), 'Welcome Back' header."
+    },
+    "super_admin_dashboard": {
+      "layout": "Bento Grid (High Density).",
+      "sections": [
+        "Header: Global Filters (Date, Branch).",
+        "Top Row: 4x KPI Cards (Total Leads, Conversion Rate, Revenue, Active Packages).",
+        "Main: Sales Trend Chart (Line) + Branch Performance (Bar).",
+        "Sidebar: Integration Status (Google Sheets Connected/Disconnected)."
+      ]
+    },
+    "leads_management": {
+      "layout": "Header with View Toggle (List/Kanban).",
+      "list_view": "Shadcn Table with sorting/filtering. Columns: Name, Source, Status, Last Contact, Assigned To.",
+      "kanban_view": "Horizontal scrollable columns. Drag & Drop. Columns: New, Contacted, Appointment Booked, Visited, Converted, Lost.",
+      "actions": "Quick Add Lead, Import from Sheets."
+    },
+    "appointment_booking": {
+      "layout": "Two Column. Left: Calendar (Month/Week). Right: Slot Selection + Patient Details Form.",
+      "features": "Color-coded slots by doctor/trainer availability. Consultation fee input."
+    }
+  },
+  "implementation_rules": {
+    "general": [
+      "Use 'sonner' for all toast notifications.",
+      "ALL interactive elements must have 'data-testid'.",
+      "Do NOT use gradients for backgrounds, only for subtle button hovers or accents.",
+      "Ensure all text has sufficient contrast (APCA standards).",
+      "Use 'lucide-react' for icons."
+    ],
+    "charts": {
+      "library": "recharts (via shadcn/charts)",
+      "style": "Minimalist. Remove grid lines if possible. Use 'primary' color for main data, 'accent' for secondary."
+    },
+    "google_sheets": {
+      "ui_pattern": "Integration Card. Show 'Connected' with Green Dot. 'Last Sync: 5 mins ago'. Button: 'Map Columns' triggering a Dialog."
+    }
+  },
+  "universal_guidelines": [
+    "You tend to converge toward generic, 'on distribution' outputs. In frontend design, this creates what users call the 'AI slop' aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight.",
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy",
+    "Use glass-morphism effects with backdrop filters (12-24px blur)",
+    "You MUST NOT apply universal transition. Eg: 'transition: all'. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms",
+    "You MUST NOT center align the app container, ie do not add '.App { text-align: center; }' in the css file. This disrupts the human natural reading flow of text",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style",
+    "NEVER: use AI assistant Emoji characters like 🤖🧠💭💡 etc for icons.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.",
+    "Main agent relies on these image URLs. Missing categories (especially sponsor logos) = main agent will use placeholder text which is FORBIDDEN",
+    "Prioritize using pre-existing components from src/components/ui when applicable",
+    "Components MUST use named exports (export const ComponentName = ...)",
+    "Pages MUST use default exports (export default function PageName() {...})",
+    "Use 'sonner' for toasts. Located in '/app/frontend/src/components/ui/sonner.tsx'"
+  ]
+}
