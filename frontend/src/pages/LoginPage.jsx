@@ -44,7 +44,7 @@ export const LoginPage = ({ onLogin }) => {
                     Physiotherapy & Fitness
                   </p>
                   <h1 className="font-heading text-4xl font-bold text-slate-900" data-testid="login-brand-title">
-                    PhysioFit CCRM
+                    PhysioFit CRM
                   </h1>
                 </div>
               </div>
