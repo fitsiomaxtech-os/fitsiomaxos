@@ -268,6 +268,37 @@ async def ensure_seed_data() -> None:
             }
         )
 
+    default_role_users = [
+        {
+            "full_name": "Pre-sales Executive",
+            "email": "presales@physiofit.com",
+            "password": "presales123",
+            "role": "pre_sales",
+        },
+        {
+            "full_name": "Sales Executive",
+            "email": "sales@physiofit.com",
+            "password": "sales123",
+            "role": "sales",
+        },
+    ]
+
+    for default_user in default_role_users:
+        exists = await db.users.find_one({"email": default_user["email"]}, {"_id": 0})
+        if not exists:
+            await db.users.insert_one(
+                {
+                    "id": str(uuid.uuid4()),
+                    "full_name": default_user["full_name"],
+                    "email": default_user["email"],
+                    "password": default_user["password"],
+                    "role": default_user["role"],
+                    "branch_id": None,
+                    "is_active": True,
+                    "created_at": now_iso(),
+                }
+            )
+
     stages_count = await db.stages.count_documents({})
     if stages_count == 0:
         base_stages = [

@@ -64,7 +64,9 @@ const defaultSheetConfig = {
 };
 
 export const CRMPage = ({ auth, onLogout }) => {
-  const [activeTab, setActiveTab] = useState(auth.user.role === "super_admin" ? "dashboard" : "leads");
+  const [activeTab, setActiveTab] = useState(
+    auth.user.role === "super_admin" ? "dashboard" : auth.user.role === "sales" ? "sales_view" : "pre_sales_view",
+  );
   const [viewType, setViewType] = useState("list");
   const [pipeline, setPipeline] = useState(auth.user.role === "sales" ? "sales" : "pre_sales");
   const [search, setSearch] = useState("");
@@ -106,17 +108,20 @@ export const CRMPage = ({ auth, onLogout }) => {
   }, [branches]);
 
   const tabs = useMemo(() => {
-    const base = [{ key: "leads", label: "Leads", icon: FolderKanban }];
     if (isAdmin) {
       return [
         { key: "dashboard", label: "Master Board", icon: Layers3 },
-        ...base,
+        { key: "pre_sales_view", label: "Pre-sales View", icon: Users },
+        { key: "sales_view", label: "Sales View", icon: Activity },
         { key: "team", label: "Team", icon: Users },
         { key: "stages", label: "Stages", icon: Activity },
         { key: "sheets", label: "Google Sheets", icon: Link2 },
       ];
     }
-    return base;
+    if (isSales) {
+      return [{ key: "sales_view", label: "Sales View", icon: Activity }];
+    }
+    return [{ key: "pre_sales_view", label: "Pre-sales View", icon: FolderKanban }];
   }, [isAdmin]);
 
   const stagesForCurrentPipeline = stagesByPipeline[pipeline] || [];
@@ -183,6 +188,17 @@ export const CRMPage = ({ auth, onLogout }) => {
   useEffect(() => {
     loadLeads();
   }, [pipeline, search, stageFilter]);
+
+  useEffect(() => {
+    if (activeTab === "pre_sales_view" && pipeline !== "pre_sales") {
+      setPipeline("pre_sales");
+      setStageFilter("");
+    }
+    if (activeTab === "sales_view" && pipeline !== "sales") {
+      setPipeline("sales");
+      setStageFilter("");
+    }
+  }, [activeTab, pipeline]);
 
   const handleLogout = async () => {
     try {
@@ -420,7 +436,7 @@ export const CRMPage = ({ auth, onLogout }) => {
           </div>
         )}
 
-        {activeTab === "leads" && (
+        {(activeTab === "pre_sales_view" || activeTab === "sales_view") && (
           <div className="space-y-6" data-testid="leads-tab-content">
             {(isAdmin || isPreSales) && (
               <Card data-testid="lead-create-card">
@@ -480,7 +496,7 @@ export const CRMPage = ({ auth, onLogout }) => {
               <CardHeader>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <CardTitle className="text-base" data-testid="leads-board-title">
-                    Lead Board ({pipeline === "pre_sales" ? "Pre-sales" : "Sales"})
+                    {activeTab === "pre_sales_view" ? "Pre-sales View" : "Sales View"}
                   </CardTitle>
                   <div className="flex flex-wrap items-center gap-2">
                     <button
@@ -505,20 +521,7 @@ export const CRMPage = ({ auth, onLogout }) => {
                     </button>
                   </div>
                 </div>
-                <div className="mt-3 grid gap-3 md:grid-cols-4">
-                  <select
-                    value={pipeline}
-                    onChange={(event) => {
-                      setPipeline(event.target.value);
-                      setStageFilter("");
-                    }}
-                    className="h-9 rounded-md border border-slate-200 px-3 text-sm"
-                    data-testid="leads-pipeline-select"
-                  >
-                    {isSales && <option value="sales">Sales</option>}
-                    {!isSales && <option value="pre_sales">Pre-sales</option>}
-                    {isAdmin && <option value="sales">Sales</option>}
-                  </select>
+                <div className="mt-3 grid gap-3 md:grid-cols-3">
 
                   <select
                     value={stageFilter}

@@ -101,7 +101,9 @@ export const LoginPage = ({ onLogin }) => {
                   {loading ? "Signing in..." : "Login to CRM"}
                 </Button>
                 <div className="rounded-md bg-slate-50 p-3 text-xs text-slate-600" data-testid="login-demo-credentials">
-                  Demo Super Admin: <strong>admin@physiofit.com / admin123</strong>
+                  <p data-testid="login-demo-super-admin">Super Admin: <strong>admin@physiofit.com / admin123</strong></p>
+                  <p data-testid="login-demo-pre-sales">Pre-sales: <strong>presales@physiofit.com / presales123</strong></p>
+                  <p data-testid="login-demo-sales">Sales: <strong>sales@physiofit.com / sales123</strong></p>
                 </div>
               </form>
             </CardContent>
