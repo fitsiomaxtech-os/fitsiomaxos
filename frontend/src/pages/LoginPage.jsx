@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Activity, ShieldCheck, UserRound, UsersRound } from "lucide-react";
+import { ShieldCheck, UserRound, UsersRound } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import { toast } from "@/components/ui/sonner";
 
 const HERO_IMAGE =
   "https://images.unsplash.com/photo-1764314138160-5f04f4a50dae?crop=entropy&cs=srgb&fm=jpg&q=85";
+const BRAND_LOGO =
+  "https://customer-assets.emergentagent.com/job_therapy-crm-board/artifacts/u4bafq34_Fitsiomax-logo.webp";
 
 export const LoginPage = ({ onLogin }) => {
   const [email, setEmail] = useState("admin@physiofit.com");
@@ -36,15 +38,20 @@ export const LoginPage = ({ onLogin }) => {
           <Card className="w-full max-w-xl border-slate-100 shadow-none" data-testid="login-form-card">
             <CardHeader className="space-y-4">
               <div className="flex items-center gap-3" data-testid="login-branding-row">
-                <div className="rounded-md bg-slate-900 p-2 text-slate-100">
-                  <Activity className="h-5 w-5" />
+                <div className="rounded-md border border-slate-200 bg-white p-1" data-testid="login-brand-logo-wrap">
+                  <img
+                    src={BRAND_LOGO}
+                    alt="FITSIO_MAX logo"
+                    className="h-12 w-12 object-contain"
+                    data-testid="login-brand-logo-image"
+                  />
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.16em] text-slate-500" data-testid="login-brand-subtitle">
-                    Physiotherapy & Fitness
+                    Physio Care & Fitness Centre
                   </p>
                   <h1 className="font-heading text-4xl font-bold text-slate-900" data-testid="login-brand-title">
-                    PhysioFit CRM
+                    FITSIO_MAX CRM View
                   </h1>
                 </div>
               </div>

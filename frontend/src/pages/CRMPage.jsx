@@ -63,6 +63,9 @@ const defaultSheetConfig = {
   },
 };
 
+const BRAND_LOGO =
+  "https://customer-assets.emergentagent.com/job_therapy-crm-board/artifacts/u4bafq34_Fitsiomax-logo.webp";
+
 export const CRMPage = ({ auth, onLogout }) => {
   const [activeTab, setActiveTab] = useState(
     auth.user.role === "super_admin" ? "dashboard" : auth.user.role === "sales" ? "sales_view" : "pre_sales_view",
@@ -341,15 +344,27 @@ export const CRMPage = ({ auth, onLogout }) => {
           className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 md:p-6"
           data-testid="crm-header"
         >
-          <div className="space-y-1" data-testid="crm-header-info">
-            <p className="text-xs uppercase tracking-[0.16em] text-slate-500" data-testid="crm-header-label">
-              Performance Pro CRM
-            </p>
-            <h1 className="font-heading text-4xl text-slate-900" data-testid="crm-header-title">
-              Welcome, {auth.user.full_name}
-            </h1>
+          <div className="space-y-2" data-testid="crm-header-info">
+            <div className="flex items-center gap-3" data-testid="crm-header-brand-row">
+              <div className="rounded-md border border-slate-200 bg-white p-1" data-testid="crm-header-brand-logo-wrap">
+                <img
+                  src={BRAND_LOGO}
+                  alt="FITSIO_MAX logo"
+                  className="h-12 w-12 object-contain"
+                  data-testid="crm-header-brand-logo"
+                />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.16em] text-slate-500" data-testid="crm-header-label">
+                  FITSIO_MAX • Physio Care & Fitness Centre
+                </p>
+                <h1 className="font-heading text-4xl text-slate-900" data-testid="crm-header-title">
+                  CRM View
+                </h1>
+              </div>
+            </div>
             <p className="text-sm text-slate-600" data-testid="crm-header-role">
-              Logged in as <span className="font-semibold capitalize">{auth.user.role.replace("_", " ")}</span>
+              Welcome, <span className="font-semibold">{auth.user.full_name}</span> · Role: {auth.user.role.replace("_", " ")}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -368,6 +383,12 @@ export const CRMPage = ({ auth, onLogout }) => {
         </header>
 
         <nav className="mb-6 flex flex-wrap gap-2" data-testid="crm-main-nav">
+          <div
+            className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700"
+            data-testid="crm-view-badge"
+          >
+            CRM View
+          </div>
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.key;

@@ -71,6 +71,11 @@ Required operational model:
   - Super Admin can open both views.
 - Fixed login branding typo (`PhysioFit CRM`).
 
+### 2026-03-17 (Branding Update)
+- Applied user-provided FITSIO_MAX branding and logo on Login and CRM header.
+- Updated brand text to **FITSIO_MAX • Physio Care & Fitness Centre**.
+- Added explicit **CRM View** label/badge in the main CRM interface.
+
 ## Validation Notes
 - Backend API smoke tests executed for login, branches, users, lead create, appointment booking, sales stage move, dashboard, sheets status.
 - Frontend screenshot checks completed for login, dashboard, leads, sheets, pre-sales view, sales view.
