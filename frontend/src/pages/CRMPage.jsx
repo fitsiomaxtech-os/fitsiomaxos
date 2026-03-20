@@ -276,6 +276,15 @@ export const CRMPage = ({ auth, onLogout }) => {
 
   const parseCsvAndImport = async () => {
     try {
+      const normalizeCategory = (value) => {
+        const clean = (value || "").trim().toLowerCase();
+        if (["online fitness", "online_fitness"].includes(clean)) return "online_fitness";
+        if (["physio therapy online", "online physio", "online_physio"].includes(clean)) return "online_physio";
+        if (["offline physio therapy", "offline_physio"].includes(clean)) return "offline_physio";
+        if (["offline fitness gym", "offline_fitness_gym"].includes(clean)) return "offline_fitness_gym";
+        return "online_fitness";
+      };
+
       const lines = csvText
         .split("\n")
         .map((line) => line.trim())
@@ -289,14 +298,27 @@ export const CRMPage = ({ auth, onLogout }) => {
         const values = line.split(",").map((v) => v.trim());
         const obj = {};
         headers.forEach((h, index) => {
-          obj[h] = values[index] || "";
+          obj[h.toLowerCase()] = values[index] || "";
         });
-        return obj;
+        return {
+          name: obj.name || "",
+          phone: obj.phone || "",
+          email: obj.email || "",
+          lead_category: normalizeCategory(obj.lead_category || obj.category),
+          preferred_location: obj.preferred_location || "",
+          service_interest: obj.service_interest || "",
+          notes: obj.notes || "",
+        };
       });
 
       await importLeads({ rows, source: "google_sheet" });
       toast.success("CSV imported to lead system");
       setCsvText("");
+      setLeadSearch("");
+      setAdminLeadRoleFilter("");
+      setActiveTab("leads");
+      const freshLeads = await getLeads({});
+      setLeads(freshLeads);
       await loadAll();
     } catch (error) {
       toast.error(error?.response?.data?.detail || "CSV import failed. Check field values.");
