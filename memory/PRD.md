@@ -1,104 +1,112 @@
-# PhysioFit CRM / CCRM PRD
+# FITSIOMAX Appointment Book System PRD
 
-## Original Problem Statement
-Build a CRM for a Physiotherapy and fitness company with Google Sheets integration where sheet rows/columns map to lead fields.
+## Original Problem Statement (Latest)
+Rebuild from scratch and build one-by-one:
+- Appointment Book System for **FITSIOMAX**
+- Brand-focused CRM View with blue/black aesthetic UI
+- Business offerings:
+  - Online: Fitness Programs, Physio Therapy
+  - Offline: 4 locations (Anna Nagar, T Nagar, Parrys, ECR)
+  - Offline Fitness GYM
+- Login roles required:
+  1. Online Fitness
+  2. Physio Therapy Online
+  3. Offline Physio Therapy
+  + Super Admin (user confirmed)
+- Lead source: Google Sheet (CSV/manual first) + manual new lead
+- Flow: lead routing by source/category → doctor calendar visibility → slot booking
+- Super Admin only can create services (+ New Service)
 
-Requested flow:
-- New Leads → Appointment Booking → New Appointments → Package Purchased
-
-Required operational model:
-- Master board
-- 4 branches
-- Sales and Pre-sales teams
-- Role-based login requested by user:
-  - Super Admin: manage team + Google Sheets integration
-  - Pre-sales: lead to appointment booking with date/time, branch, consultation fee
-  - Sales: new appointments to package sold
-- Custom stage creation
-- List view + Kanban view
+## User Choices Confirmed
+1. **Reset Scope**: Full rebuild from scratch.
+2. **Logins**: 3 role logins + Super Admin.
+3. **Lead Source**: CSV/manual first + manual appointment and manual lead.
+4. **Doctor Calendar**: Internal calendar with doctor slots and booking.
+5. **Service Creation**: Super Admin only.
 
 ## User Personas
-- **Super Admin**: oversees all branches, manages users/stages, configures Sheets mapping, monitors conversion.
-- **Pre-sales Executive**: captures and nurtures leads, books appointments, collects consultation fee.
-- **Sales Executive**: handles appointments and converts to package purchased.
+- **Super Admin**: controls services, doctors, slots, import, and global overview.
+- **Online Fitness Coordinator**: handles online fitness leads + booking.
+- **Online Physio Coordinator**: handles online physiotherapy leads + booking.
+- **Offline Physio Coordinator**: handles offline physiotherapy leads + booking.
 
 ## Architecture Decisions
-- **Frontend**: React + shadcn/ui, role-specific navigation and views.
-- **Backend**: FastAPI + MongoDB (Motor), role-protected CRUD APIs.
-- **Data design**:
-  - `users`, `branches`, `stages`, `leads`, `sessions`, `sheets_configs`, `sheets_tokens`, `oauth_states`.
-  - Custom stage model per pipeline (`pre_sales`, `sales`).
-  - Lead lifecycle tracks appointment details + pipeline ownership.
-- **Google Sheets integration strategy**:
-  - Super Admin mapping UI + config persistence.
-  - OAuth endpoints and import endpoint implemented; connection pending OAuth keys from user.
+- **Frontend**: React + shadcn, dark blue/black aesthetic, role-based tabbed workspace.
+- **Backend**: FastAPI + MongoDB (Motor).
+- **Versioned App Isolation**:
+  - New app implemented under `/api/v2` so clean rebuild can run independently.
+  - Separate v2 collections (`fitsiomax_v2_*`) to avoid legacy data conflicts.
+- **Core entities**:
+  - `users`, `sessions`, `services`, `doctors`, `leads`, `appointments`
+- **Lead routing**:
+  - `online_fitness` + `offline_fitness_gym` → Online Fitness queue
+  - `online_physio` → Online Physio queue
+  - `offline_physio` → Offline Physio queue
 
 ## Core Requirements (Static)
-1. Role-based logins for Super Admin / Pre-sales / Sales.
-2. Master board and branch-aware CRM operations.
-3. Pre-sales workflow to appointment booking with fee + date/time.
-4. Sales workflow from appointment to package purchased.
-5. Custom stage creation for both pipelines.
-6. Lead management in List and Kanban views.
-7. Google Sheets column mapping and import workflow.
+1. Role-based login for 4 roles.
+2. Manual lead creation and manual appointment booking.
+3. Internal doctor calendar with slot creation and slot booking.
+4. Super Admin-only service creation.
+5. CSV/manual lead import from Google Sheet format.
+6. Location support for Anna Nagar, T Nagar, Parrys, ECR.
+7. Blue-black branded UI with FITSIOMAX logo and CRM View identity.
 
 ## What’s Implemented
-### 2026-03-17 (Initial MVP)
-- Built complete FastAPI CRM backend with role auth, branch/team management, custom stages, lead workflow endpoints.
-- Implemented appointment booking endpoint that moves lead from pre-sales to sales pipeline.
-- Implemented dashboard summary metrics and branch breakdown.
-- Implemented Google Sheets integration module:
-  - status/config endpoints,
-  - OAuth login/callback scaffolding,
-  - mapped import endpoint for leads.
-- Built React frontend:
-  - split login page,
-  - Super Admin master board,
-  - Team and stage management,
-  - Google Sheets mapping UI,
-  - lead board with list/kanban.
-- Added `data-testid` coverage on key interactive and user-facing elements.
-- Added default demo users:
-  - admin@physiofit.com / admin123
-  - presales@physiofit.com / presales123
-  - sales@physiofit.com / sales123
+### 2026-03-20 (Full Rebuild to FITSIOMAX Appointment System)
+- Built complete **v2 backend** (`/api/v2`) for new appointment-first product flow.
+- Added seeded role logins:
+  - admin@fitsiomax.com / admin123
+  - onlinefitness@fitsiomax.com / online123
+  - onlinephysio@fitsiomax.com / physio123
+  - offlinephysio@fitsiomax.com / offline123
+- Implemented APIs for:
+  - role login/logout
+  - services (admin-only create)
+  - doctors + slot creation
+  - doctor availability calendar
+  - leads CRUD-lite + role routing
+  - manual/CSV lead import
+  - appointment booking with double-book conflict prevention
+  - dashboard summary metrics
+- Built brand-new **blue/black aesthetic frontend**:
+  - FITSIOMAX branded login + CRM header
+  - role-based tabs and flow visibility
+  - manual lead creation
+  - manual appointment booking
+  - doctor calendar slot selection UI
+  - services page (admin)
+  - import page for CSV/manual Google Sheet format
+- Added and maintained `data-testid` attributes for interactive and critical UI elements.
 
-### 2026-03-17 (Further Development)
-- Added dedicated **Pre-sales View** and **Sales View** screens/navigation.
-- Role-specific landing behavior:
-  - Pre-sales users land directly on Pre-sales View.
-  - Sales users land directly on Sales View.
-  - Super Admin can open both views.
-- Fixed login branding typo (`PhysioFit CRM`).
-
-### 2026-03-17 (Branding Update)
-- Applied user-provided FITSIO_MAX branding and logo on Login and CRM header.
-- Updated brand text to **FITSIO_MAX • Physio Care & Fitness Centre**.
-- Added explicit **CRM View** label/badge in the main CRM interface.
+### 2026-03-20 (Bug Fix Iteration)
+- Fixed Import Tab issue where CSV-imported leads were not visible immediately in Leads table.
+- Applied CSV category normalization + filter reset + post-import lead refresh + auto-tab switch.
 
 ## Validation Notes
-- Backend API smoke tests executed for login, branches, users, lead create, appointment booking, sales stage move, dashboard, sheets status.
-- Frontend screenshot checks completed for login, dashboard, leads, sheets, pre-sales view, sales view.
-- Testing agent runs completed and passed for requested feature sets.
+- Backend curl smoke tests passed for full v2 flow (login, doctor/slot, lead create, appointment, dashboard).
+- Frontend screenshot tests passed for login, overview, leads, appointments.
+- Testing agent results:
+  - Iteration 3 found CSV-import visibility bug
+  - Iteration 4 confirmed fix PASS
 
 ## Prioritized Backlog
-### P0 (Next)
-- Plug in real Google OAuth credentials (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`) and validate live sheet sync.
-- Enforce secure password hashing (replace plain-text password storage).
+### P0
+- Add password hashing for v2 auth (currently plain-text in seed flow).
+- Add Super Admin user/team management screen for creating real role users.
 
 ### P1
-- Branch-specific assignment rules and workload balancing.
-- Lead activity timeline and audit log.
-- Better stage drag-and-drop interactions in Kanban.
+- Real Google Sheets OAuth sync (currently CSV/manual-first mode active).
+- Rich weekly/monthly calendar visualization with drag/drop rescheduling.
+- Appointment reminders and notification workflows.
 
 ### P2
-- Advanced analytics (conversion by source/campaign).
-- Notifications/reminders for upcoming appointments.
-- Export reports and printable summaries.
+- Revenue and conversion analytics dashboard.
+- Multi-doctor availability optimizer.
 
 ## Next Tasks List
-1. Add Google OAuth keys and complete live connect test from Super Admin account.
-2. Migrate password handling to hashed storage and update login verification.
-3. Add branch filters to dashboard cards and lead board.
-4. Add soft-delete/archive actions for leads and users.
+1. Implement secure password hashing + migration path.
+2. Add admin user management CRUD.
+3. Add OAuth-based Google Sheets live sync.
+4. Add appointment reschedule/cancel workflow and calendar month view.
 
