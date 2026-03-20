@@ -950,8 +950,507 @@ async def import_from_sheets(user: AuthUser = Depends(require_roles("super_admin
 async def startup_seed_data():
     await ensure_seed_data()
 
+
+# -------------------------
+# FITSIOMAX APPOINTMENT V2
+# -------------------------
+v2_router = APIRouter(prefix="/api/v2")
+V2_LOCATIONS = ["Anna Nagar", "T Nagar", "Parrys", "ECR"]
+
+
+def v2_col(name: str):
+    return db[f"fitsiomax_v2_{name}"]
+
+
+def v2_map_role(lead_category: str) -> str:
+    if lead_category in ["online_fitness", "offline_fitness_gym"]:
+        return "online_fitness"
+    if lead_category == "online_physio":
+        return "online_physio"
+    return "offline_physio"
+
+
+class V2UserOut(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    full_name: str
+    email: str
+    role: Literal["super_admin", "online_fitness", "online_physio", "offline_physio"]
+    created_at: str
+
+
+class V2LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class V2LoginResponse(BaseModel):
+    token: str
+    user: V2UserOut
+
+
+class V2ServiceCreate(BaseModel):
+    name: str
+    mode: Literal["online", "offline"]
+    category: Literal["fitness_program", "physio_therapy", "offline_fitness_gym"]
+
+
+class V2ServiceOut(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    name: str
+    mode: str
+    category: str
+    created_at: str
+
+
+class V2DoctorCreate(BaseModel):
+    full_name: str
+    specialty_role: Literal["online_fitness", "online_physio", "offline_physio"]
+    location: Optional[str] = None
+
+
+class V2DoctorSlotsInput(BaseModel):
+    slots: List[str]
+
+
+class V2DoctorOut(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    full_name: str
+    specialty_role: str
+    location: Optional[str] = None
+    slots: List[str]
+    created_at: str
+
+
+class V2LeadCreate(BaseModel):
+    name: str
+    phone: str
+    email: Optional[str] = ""
+    lead_category: Literal["online_fitness", "online_physio", "offline_physio", "offline_fitness_gym"]
+    source: Literal["manual", "google_sheet"] = "manual"
+    preferred_location: Optional[str] = None
+    service_interest: Optional[str] = ""
+    notes: Optional[str] = ""
+
+
+class V2LeadImportRow(BaseModel):
+    name: str
+    phone: str
+    email: Optional[str] = ""
+    lead_category: Literal["online_fitness", "online_physio", "offline_physio", "offline_fitness_gym"]
+    preferred_location: Optional[str] = None
+    service_interest: Optional[str] = ""
+    notes: Optional[str] = ""
+
+
+class V2LeadImportInput(BaseModel):
+    rows: List[V2LeadImportRow]
+    source: Literal["google_sheet", "manual_csv"] = "google_sheet"
+
+
+class V2LeadOut(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    name: str
+    phone: str
+    email: Optional[str] = ""
+    lead_category: str
+    assigned_role: str
+    source: str
+    preferred_location: Optional[str] = None
+    service_interest: Optional[str] = ""
+    status: str
+    notes: Optional[str] = ""
+    created_at: str
+    updated_at: str
+
+
+class V2AppointmentCreate(BaseModel):
+    lead_id: Optional[str] = None
+    patient_name: Optional[str] = None
+    doctor_id: str
+    slot_time: str
+    service_id: Optional[str] = None
+    location: Optional[str] = None
+    notes: Optional[str] = ""
+
+
+class V2AppointmentOut(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    lead_id: Optional[str] = None
+    patient_name: str
+    doctor_id: str
+    doctor_name: str
+    slot_time: str
+    location: Optional[str] = None
+    service_id: Optional[str] = None
+    service_name: Optional[str] = None
+    pipeline_role: str
+    created_by_role: str
+    status: str
+    notes: Optional[str] = ""
+    created_at: str
+
+
+class V2DashboardSummary(BaseModel):
+    metrics: Dict[str, int]
+    lead_split: Dict[str, int]
+
+
+async def v2_seed() -> None:
+    users = [
+        {"full_name": "Super Admin", "email": "admin@fitsiomax.com", "password": "admin123", "role": "super_admin"},
+        {"full_name": "Online Fitness", "email": "onlinefitness@fitsiomax.com", "password": "online123", "role": "online_fitness"},
+        {"full_name": "Online Physio", "email": "onlinephysio@fitsiomax.com", "password": "physio123", "role": "online_physio"},
+        {"full_name": "Offline Physio", "email": "offlinephysio@fitsiomax.com", "password": "offline123", "role": "offline_physio"},
+    ]
+    for user in users:
+        exists = await v2_col("users").find_one({"email": user["email"]}, {"_id": 0})
+        if not exists:
+            await v2_col("users").insert_one(
+                {
+                    "id": str(uuid.uuid4()),
+                    "full_name": user["full_name"],
+                    "email": user["email"],
+                    "password": user["password"],
+                    "role": user["role"],
+                    "is_active": True,
+                    "created_at": now_iso(),
+                }
+            )
+
+    if await v2_col("services").count_documents({}) == 0:
+        defaults = [
+            {"name": "Online Fitness Program", "mode": "online", "category": "fitness_program"},
+            {"name": "Online Physio Therapy", "mode": "online", "category": "physio_therapy"},
+            {"name": "Offline Physio Therapy", "mode": "offline", "category": "physio_therapy"},
+            {"name": "Offline Fitness GYM", "mode": "offline", "category": "offline_fitness_gym"},
+        ]
+        for item in defaults:
+            await v2_col("services").insert_one(
+                {
+                    "id": str(uuid.uuid4()),
+                    "name": item["name"],
+                    "mode": item["mode"],
+                    "category": item["category"],
+                    "created_at": now_iso(),
+                }
+            )
+
+
+@app.on_event("startup")
+async def v2_startup_seed():
+    await v2_seed()
+
+
+async def v2_current_user(authorization: str = Header(...)) -> V2UserOut:
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authorization header")
+    token = authorization.split(" ", 1)[1].strip()
+    session = await v2_col("sessions").find_one({"token": token}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=401, detail="Session expired")
+    user = await v2_col("users").find_one({"id": session["user_id"], "is_active": True}, {"_id": 0, "password": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return V2UserOut(**user)
+
+
+def v2_require_roles(*roles: str):
+    async def checker(user: V2UserOut = Depends(v2_current_user)) -> V2UserOut:
+        if user.role not in roles:
+            raise HTTPException(status_code=403, detail="Not allowed")
+        return user
+
+    return checker
+
+
+@v2_router.get("/")
+async def v2_root():
+    return {"message": "FITSIOMAX Appointment API v2"}
+
+
+@v2_router.post("/auth/login", response_model=V2LoginResponse)
+async def v2_login(payload: V2LoginRequest):
+    user = await v2_col("users").find_one({"email": payload.email.lower(), "is_active": True}, {"_id": 0})
+    if not user or user.get("password") != payload.password:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    token = str(uuid.uuid4())
+    await v2_col("sessions").delete_many({"user_id": user["id"]})
+    await v2_col("sessions").insert_one({"token": token, "user_id": user["id"], "created_at": now_iso()})
+    public_user = {k: v for k, v in user.items() if k != "password"}
+    return V2LoginResponse(token=token, user=V2UserOut(**public_user))
+
+
+@v2_router.post("/auth/logout")
+async def v2_logout(user: V2UserOut = Depends(v2_current_user), authorization: str = Header(...)):
+    token = authorization.split(" ", 1)[1].strip()
+    await v2_col("sessions").delete_one({"token": token, "user_id": user.id})
+    return {"message": "Logged out"}
+
+
+@v2_router.get("/meta/locations")
+async def v2_get_locations(_: V2UserOut = Depends(v2_current_user)):
+    return {"locations": V2_LOCATIONS}
+
+
+@v2_router.get("/services", response_model=List[V2ServiceOut])
+async def v2_get_services(_: V2UserOut = Depends(v2_current_user)):
+    rows = await v2_col("services").find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [V2ServiceOut(**row) for row in rows]
+
+
+@v2_router.post("/services", response_model=V2ServiceOut)
+async def v2_create_service(payload: V2ServiceCreate, _: V2UserOut = Depends(v2_require_roles("super_admin"))):
+    item = {
+        "id": str(uuid.uuid4()),
+        "name": payload.name.strip(),
+        "mode": payload.mode,
+        "category": payload.category,
+        "created_at": now_iso(),
+    }
+    await v2_col("services").insert_one(item.copy())
+    return V2ServiceOut(**item)
+
+
+@v2_router.get("/doctors", response_model=List[V2DoctorOut])
+async def v2_get_doctors(
+    specialty_role: Optional[str] = None,
+    location: Optional[str] = None,
+    _: V2UserOut = Depends(v2_current_user),
+):
+    query: Dict[str, object] = {}
+    if specialty_role:
+        query["specialty_role"] = specialty_role
+    if location:
+        query["location"] = location
+    rows = await v2_col("doctors").find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [V2DoctorOut(**row) for row in rows]
+
+
+@v2_router.post("/doctors", response_model=V2DoctorOut)
+async def v2_create_doctor(payload: V2DoctorCreate, _: V2UserOut = Depends(v2_require_roles("super_admin"))):
+    item = {
+        "id": str(uuid.uuid4()),
+        "full_name": payload.full_name.strip(),
+        "specialty_role": payload.specialty_role,
+        "location": payload.location,
+        "slots": [],
+        "created_at": now_iso(),
+    }
+    await v2_col("doctors").insert_one(item.copy())
+    return V2DoctorOut(**item)
+
+
+@v2_router.post("/doctors/{doctor_id}/slots", response_model=V2DoctorOut)
+async def v2_create_doctor_slots(doctor_id: str, payload: V2DoctorSlotsInput, _: V2UserOut = Depends(v2_require_roles("super_admin"))):
+    doctor = await v2_col("doctors").find_one({"id": doctor_id}, {"_id": 0})
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    all_slots = sorted(set(doctor.get("slots", [])).union(set(payload.slots)))
+    await v2_col("doctors").update_one({"id": doctor_id}, {"$set": {"slots": all_slots}})
+    updated = await v2_col("doctors").find_one({"id": doctor_id}, {"_id": 0})
+    return V2DoctorOut(**updated)
+
+
+@v2_router.get("/doctors/{doctor_id}/availability")
+async def v2_get_doctor_availability(doctor_id: str, _: V2UserOut = Depends(v2_current_user)):
+    doctor = await v2_col("doctors").find_one({"id": doctor_id}, {"_id": 0})
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    booked_rows = await v2_col("appointments").find({"doctor_id": doctor_id, "status": "booked"}, {"_id": 0, "slot_time": 1}).to_list(1000)
+    booked = {row["slot_time"] for row in booked_rows}
+    grouped: Dict[str, List[Dict[str, object]]] = {}
+    for slot in doctor.get("slots", []):
+        key = slot.split("T")[0] if "T" in slot else slot[:10]
+        grouped.setdefault(key, []).append({"slot": slot, "booked": slot in booked})
+    return {"doctor_id": doctor_id, "doctor_name": doctor["full_name"], "grouped_slots": grouped}
+
+
+@v2_router.get("/leads", response_model=List[V2LeadOut])
+async def v2_get_leads(
+    assigned_role: Optional[str] = None,
+    source: Optional[str] = None,
+    search: Optional[str] = None,
+    user: V2UserOut = Depends(v2_current_user),
+):
+    query: Dict[str, object] = {}
+    if user.role != "super_admin":
+        query["assigned_role"] = user.role
+    elif assigned_role:
+        query["assigned_role"] = assigned_role
+    if source:
+        query["source"] = source
+    if search:
+        query["$or"] = [
+            {"name": {"$regex": search, "$options": "i"}},
+            {"phone": {"$regex": search, "$options": "i"}},
+            {"email": {"$regex": search, "$options": "i"}},
+        ]
+    rows = await v2_col("leads").find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [V2LeadOut(**row) for row in rows]
+
+
+@v2_router.post("/leads", response_model=V2LeadOut)
+async def v2_add_lead(payload: V2LeadCreate, user: V2UserOut = Depends(v2_current_user)):
+    assigned_role = v2_map_role(payload.lead_category)
+    if user.role != "super_admin" and user.role != assigned_role:
+        raise HTTPException(status_code=403, detail="Not allowed for this lead category")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "name": payload.name.strip(),
+        "phone": payload.phone.strip(),
+        "email": payload.email,
+        "lead_category": payload.lead_category,
+        "assigned_role": assigned_role,
+        "source": payload.source,
+        "preferred_location": payload.preferred_location,
+        "service_interest": payload.service_interest,
+        "status": "new_lead",
+        "notes": payload.notes,
+        "created_at": now_iso(),
+        "updated_at": now_iso(),
+    }
+    await v2_col("leads").insert_one(doc.copy())
+    return V2LeadOut(**doc)
+
+
+@v2_router.post("/leads/import")
+async def v2_import(payload: V2LeadImportInput, _: V2UserOut = Depends(v2_require_roles("super_admin"))):
+    imported = 0
+    skipped = 0
+    for row in payload.rows:
+        exists = await v2_col("leads").find_one({"phone": row.phone}, {"_id": 0})
+        if exists:
+            skipped += 1
+            continue
+        doc = {
+            "id": str(uuid.uuid4()),
+            "name": row.name,
+            "phone": row.phone,
+            "email": row.email,
+            "lead_category": row.lead_category,
+            "assigned_role": v2_map_role(row.lead_category),
+            "source": "google_sheet" if payload.source == "google_sheet" else "manual_csv",
+            "preferred_location": row.preferred_location,
+            "service_interest": row.service_interest,
+            "status": "new_lead",
+            "notes": row.notes,
+            "created_at": now_iso(),
+            "updated_at": now_iso(),
+        }
+        await v2_col("leads").insert_one(doc.copy())
+        imported += 1
+    return {"imported": imported, "skipped": skipped}
+
+
+@v2_router.get("/appointments", response_model=List[V2AppointmentOut])
+async def v2_get_appointments(
+    doctor_id: Optional[str] = None,
+    user: V2UserOut = Depends(v2_current_user),
+):
+    query: Dict[str, object] = {}
+    if doctor_id:
+        query["doctor_id"] = doctor_id
+    if user.role != "super_admin":
+        query["pipeline_role"] = user.role
+    rows = await v2_col("appointments").find(query, {"_id": 0}).sort("slot_time", 1).to_list(1000)
+    return [V2AppointmentOut(**row) for row in rows]
+
+
+@v2_router.post("/appointments", response_model=V2AppointmentOut)
+async def v2_add_appointment(payload: V2AppointmentCreate, user: V2UserOut = Depends(v2_current_user)):
+    doctor = await v2_col("doctors").find_one({"id": payload.doctor_id}, {"_id": 0})
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    if payload.slot_time not in doctor.get("slots", []):
+        raise HTTPException(status_code=400, detail="Slot not in doctor calendar")
+    clash = await v2_col("appointments").find_one({"doctor_id": payload.doctor_id, "slot_time": payload.slot_time, "status": "booked"}, {"_id": 0})
+    if clash:
+        raise HTTPException(status_code=409, detail="Slot already booked")
+
+    lead_doc = None
+    patient_name = payload.patient_name
+    pipeline_role = user.role
+    if payload.lead_id:
+        lead_doc = await v2_col("leads").find_one({"id": payload.lead_id}, {"_id": 0})
+        if not lead_doc:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        patient_name = lead_doc["name"]
+        pipeline_role = lead_doc["assigned_role"]
+    if not patient_name:
+        raise HTTPException(status_code=400, detail="Patient name is required")
+    if user.role != "super_admin" and user.role != pipeline_role:
+        raise HTTPException(status_code=403, detail="Cannot book outside your flow")
+
+    service_name = None
+    if payload.service_id:
+        service_doc = await v2_col("services").find_one({"id": payload.service_id}, {"_id": 0})
+        service_name = service_doc["name"] if service_doc else None
+
+    appointment = {
+        "id": str(uuid.uuid4()),
+        "lead_id": payload.lead_id,
+        "patient_name": patient_name,
+        "doctor_id": doctor["id"],
+        "doctor_name": doctor["full_name"],
+        "slot_time": payload.slot_time,
+        "location": payload.location or doctor.get("location"),
+        "service_id": payload.service_id,
+        "service_name": service_name,
+        "pipeline_role": pipeline_role,
+        "created_by_role": user.role,
+        "status": "booked",
+        "notes": payload.notes,
+        "created_at": now_iso(),
+    }
+    await v2_col("appointments").insert_one(appointment.copy())
+    if lead_doc:
+        await v2_col("leads").update_one({"id": lead_doc["id"]}, {"$set": {"status": "appointment_booked", "updated_at": now_iso()}})
+    return V2AppointmentOut(**appointment)
+
+
+@v2_router.get("/dashboard/summary", response_model=V2DashboardSummary)
+async def v2_get_summary(user: V2UserOut = Depends(v2_current_user)):
+    lead_query: Dict[str, object] = {}
+    appt_query: Dict[str, object] = {}
+    if user.role != "super_admin":
+        lead_query["assigned_role"] = user.role
+        appt_query["pipeline_role"] = user.role
+
+    metrics = {
+        "total_leads": await v2_col("leads").count_documents(lead_query),
+        "new_leads": await v2_col("leads").count_documents({**lead_query, "status": "new_lead"}),
+        "appointments_booked": await v2_col("appointments").count_documents(appt_query),
+    }
+    split = {
+        "online_fitness": await v2_col("leads").count_documents({**lead_query, "assigned_role": "online_fitness"}),
+        "online_physio": await v2_col("leads").count_documents({**lead_query, "assigned_role": "online_physio"}),
+        "offline_physio": await v2_col("leads").count_documents({**lead_query, "assigned_role": "offline_physio"}),
+    }
+    return V2DashboardSummary(metrics=metrics, lead_split=split)
+
+
+@v2_router.get("/sheets/status")
+async def v2_sheet_status(_: V2UserOut = Depends(v2_current_user)):
+    return {
+        "mode": "csv_manual_first",
+        "csv_import_ready": True,
+        "oauth_ready": bool(os.environ.get("GOOGLE_CLIENT_ID") and os.environ.get("GOOGLE_CLIENT_SECRET")),
+        "message": "CSV/manual import enabled. Google OAuth can be added in next phase.",
+    }
+
 # Include the router in the main app
 app.include_router(api_router)
+app.include_router(v2_router)
 
 app.add_middleware(
     CORSMiddleware,
