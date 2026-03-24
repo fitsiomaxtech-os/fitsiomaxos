@@ -53,6 +53,11 @@ Build FITSIOMAX OS with:
 - Added Super Admin modules for vertical and branch setup in board.
 - Replaced mocked lead preview with live lead-source preview from backend leads.
 
+### Login Demo Dropdown Enhancement
+- Added Demo User dropdown on login screen.
+- Dropdown now supports immediate **auto-fill + auto-login** behavior.
+- Included all 6 demo users in dropdown and verified role landing accuracy.
+
 ### Post-QA Fixes Applied
 - Fixed default seeded `branchadmin@fitsiomax.com` branch linkage (non-null branch_id).
 - Fixed `/api/v3/leads/{lead_id}/confirm` to enforce scoped update result and return 403/404 correctly.
@@ -63,6 +68,7 @@ Build FITSIOMAX OS with:
 - Screen 1 testing (iteration 7): pass for login + role access.
 - Role board testing (iteration 8): issues found and fixed.
 - Retest (iteration 9): all targeted backend/frontend checks passed; no blocking issues.
+- Dropdown retest (iteration 10): pass for immediate auto-login and manual login compatibility.
 - Backend regression files created by testing agent:
   - `/app/backend/tests/test_fitsiomax_v3_seeded_role_integrity.py`
   - `/app/backend/tests/test_fitsiomax_v3_iteration9_retest.py`
