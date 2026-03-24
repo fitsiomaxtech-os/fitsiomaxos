@@ -1,139 +1,65 @@
-# FITSIOMAX OS PRD (Current)
+# FITSIOMAX OS PRD (Restarted — Screen-by-Screen)
 
-## Original Problem Statement (Current Phase)
-Build **Fitsiomax OS** with full operations flow:
-- Business Development role can connect/manage multiple Google Sheets.
-- Import all leads from sheets to CRM automatically.
-- Map sheet headers to lead fields (or create new fields dynamically).
-- Each sheet tab acts as lead source (Instagram, Meta, Walkins, etc.).
-- Business verticals:
-  - Offline Physiotherapy
-  - Online Physiotherapy
-  - Online Fitness
-  - Offline Fitness with GYM
-- Branch hierarchy (phase-first on Offline Physiotherapy):
-  - Business Admin can create multiple branches.
-  - Each branch has own board.
-  - Branch has admin credentials/details.
-- Physio hierarchy:
-  - Head Physio profile + Physio profiles per branch.
-  - Head physio calendar and appointments.
-- Lead workflow:
-  - Lead from sheets → Pre-sales → assigned to branch → branch confirms → appointment booking with available doctors only → head physio sees today/new appointments.
+## Original Problem Statement
+Build FITSIOMAX OS with:
+- Business Development sheet connector permissions
+- Lead Master Sheet to CRM sync
+- Multi-sheet support
+- Tab-as-source support (Instagram/Meta/Walkins)
+- Business verticals and branch operations
+- Physio and Head Physio workflows
+- Pre-sales to branch to appointment pipeline
 
-## Confirmed User Choices
-1. Rebuild from scratch (again) — **YES**.
-2. Roles: **Super Admin, Business Development, Pre-sales, Branch Admin, Head Physio, Physio**.
-3. Google Sheets auth: **OAuth architecture now with placeholder creds**, and manual lead creation enabled.
-4. Pipeline fixed:
-   - New Lead → Pre-sales Qualified → Assigned to Branch → Branch Confirmed → Appointment Booked → Completed
-5. Branch rollout: **Phase-wise** (Offline Physio first, others architecture-ready).
+## User Choices (Current Restart)
+1. Full rebuild: **Yes**
+2. Start with Screen 1: **Login + Role Access**
+3. Google Sheets for now: **manual/JSON simulation first**, OAuth in next step
+4. UI style defaulted from user note: **SaaS minimal, mostly white + blue**
 
-## User Personas
-- **Super Admin**: overall governance, boards, vertical controls.
-- **Business Development**: manages Google Sheets connectors, mappings, sync.
-- **Pre-sales**: qualification and branch assignment.
-- **Branch Admin**: confirms leads, books appointments.
-- **Head Physio**: sees today/new appointments, completion flow.
-- **Physio**: operational appointment execution and completion updates.
+## Architecture Decision for This Iteration
+- Keep backend role-auth endpoint available at `/api/v3/auth/login`.
+- Restrict frontend scope to **Screen 1 only**.
+- Provide mocked Google Sheet lead JSON preview (no live sync yet).
 
-## Architecture Decisions
-- **Frontend**: React + shadcn, blue/black aesthetic, role-aware tab navigation.
-- **Backend**: FastAPI + MongoDB with isolated **v3 domain** under `/api/v3`.
-- **Data isolation**: dedicated `fitsiomax_v3_*` collections.
-- **Sheets model**:
-  - Multiple sheet connections
-  - Per-connection field mappings
-  - Tab-wise sync payload where tab name becomes lead source
-  - Dynamic extra field capture for unmapped columns
-- **Availability model**:
-  - Doctor slots stored per doctor
-  - Slot conflict blocking at booking time
-  - Slot normalization to avoid mixed datetime format mismatches
-
-## Core Requirements (Static)
-1. Multi-role RBAC for 6 roles.
-2. Multi-sheet connector with tab-as-source ingestion.
-3. Dynamic lead field mapping with new-field capture.
-4. Manual lead creation support.
-5. Pre-sales qualification and branch assignment.
-6. Branch-admin confirmation and appointment booking.
-7. Available-doctor-only booking behavior.
-8. Head physio today/new appointment visibility.
-9. Branch board + master board stage visibility.
-
-## What’s Implemented
-### 2026-03-24 (FITSIOMAX OS v3 Rebuild)
-- Implemented new `/api/v3` backend with roles:
-  - super_admin, business_dev, pre_sales, branch_admin, head_physio, physio
-- Added v3 auth and role seed accounts.
-- Implemented business vertical management APIs.
-- Implemented branch creation with branch-admin credentials and branch board support.
-- Implemented doctor profile + slot management (head physio/physio hierarchy support).
-- Implemented lead lifecycle actions:
-  - manual lead create
-  - pre-sales qualify
-  - assign to branch
-  - branch confirm
-  - appointment booking
-- Implemented appointments module:
-  - today/new filters
-  - complete action updates appointment + lead stage
-- Implemented Google Sheets connector module:
-  - multiple sheet connections
-  - mapping save
-  - sync ingest with tab-as-source
-  - dynamic extra field storage
-- Added board APIs:
-  - master stage counts
-  - branch stage counts
-
-### 2026-03-24 (UI Rebuild)
-- Rebuilt frontend CRM into FITSIOMAX OS role-based workspace.
-- Added dedicated modules/tabs for:
-  - Master board
-  - Lead master
-  - Pre-sales board
-  - Branch board
-  - Appointments
-  - Doctors
-  - Sheets connector
-  - Branches
-  - Business verticals
-- Added blue/black aesthetic with FITSIOMAX branding and logo.
-
-### 2026-03-24 (Regression Fixes)
-- Fixed head physio/physio appointment visibility blockers.
-- Reduced role-based 403 noise by role-aware frontend loading.
-- Hardened doctor select rendering and slot formatting behavior.
-- Added slot-time normalization to prevent mixed-format availability mismatch.
+## What’s Implemented (2026-03-24)
+### Screen 1 Complete
+- Rebuilt Login screen to white/blue minimal SaaS style.
+- Added role-access selection screen after login with exactly 6 role cards:
+  - Super Admin
+  - Business Dev
+  - Pre-sales
+  - Branch Admin
+  - Head Physio
+  - Physio
+- Role-lock behavior:
+  - Logged-in role card marked active
+  - Other roles shown locked for current login
+- Added mock JSON block to preview next-phase Google Sheet lead structure.
+- Added complete `data-testid` coverage for Screen 1 UI interactions.
 
 ## Validation Notes
-- Backend smoke tests passed for v3 key flows via curl.
-- Frontend screenshot tests passed for login, master board, sheets, branch board, head physio appointments.
-- Testing agent outcomes:
-  - Iteration 5 found head physio/physio visibility bug.
-  - Iteration 6 passed after fixes (14/14 backend tests).
+- Backend role login tested for all 6 credentials (pass).
+- Frontend screenshot tests passed for login + role grid.
+- Testing agent iteration 7:
+  - Backend: 14/14 pass
+  - Frontend: all requested Screen 1 checks pass
+  - No blocking issues in Screen 1 scope
 
-## Prioritized Backlog
+## Prioritized Backlog (Next Screens)
 ### P0
-- Real OAuth credential integration for live Google Sheets pull (currently placeholder-credential mode).
-- Add user-to-branch assignment UI for operational roles (head physio, physio, branch staff).
-- Password hashing migration (currently plain text in seed/auth).
+- Screen 2: Business Development Google Sheets connector UI (connection + mapping + sync simulation)
+- Screen 3: Lead Master board with stage movement
 
 ### P1
-- True automatic scheduler/cron for periodic sheet sync (currently manual trigger endpoint).
-- Branch-wise doctor roster management with shift windows.
-- Lead deduplication rules by phone + source + timestamp.
+- Pre-sales qualification and branch assignment screen
+- Branch admin board and confirmation screen
 
 ### P2
-- Analytics: conversion per source tab and branch.
-- Notification system for appointment reminders and no-shows.
-- Deep audit logs and role action timeline.
+- Doctor availability booking screen
+- Head physio today/new appointment board
 
 ## Next Tasks List
-1. Plug real Google OAuth credentials and complete live sync flow (non-placeholder).
-2. Build branch assignment UI for operational users and enforce strict branch scoping.
-3. Add periodic background sync scheduler for all connected sheets.
-4. Add password hashing and migration path before production hardening.
+1. Build **Screen 2**: Google Sheets connection manager (UI + mapping + sync simulation).
+2. Add dynamic field mapping UI (create new lead fields from headers).
+3. Add tab/source preview and imported lead counters.
 
