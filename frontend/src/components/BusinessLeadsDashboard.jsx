@@ -3,13 +3,16 @@ import {
   BarChart3,
   Building2,
   Database,
+  Edit3,
   FileSpreadsheet,
   Globe,
   Plus,
   RefreshCw,
   Search,
+  Trash2,
   TrendingUp,
   Users,
+  X,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,6 +23,7 @@ import {
   createBranch,
   createManualLead,
   createSheetConnection,
+  deleteBranch,
   getBdSummary,
   getBranches,
   getLeadSources,
@@ -28,6 +32,7 @@ import {
   qualifyLead,
   saveSheetMapping,
   syncSheetConnection,
+  updateBranch,
 } from "@/lib/api";
 
 const TABS = [
@@ -103,6 +108,8 @@ export const BusinessLeadsDashboard = () => {
 
   const [branchForm, setBranchForm] = useState(defaultBranchForm);
   const [showBranchForm, setShowBranchForm] = useState(false);
+  const [editingBranch, setEditingBranch] = useState(null);
+  const [deletingBranchId, setDeletingBranchId] = useState(null);
 
   const [leadStageFilter, setLeadStageFilter] = useState("");
   const [leadBranchFilter, setLeadBranchFilter] = useState("");
@@ -212,6 +219,52 @@ export const BusinessLeadsDashboard = () => {
       await loadDashboard();
     } catch (err) {
       toast.error(err?.response?.data?.detail || "Branch creation failed");
+    }
+  };
+
+  const openEditBranch = (branch) => {
+    setEditingBranch(branch);
+    setBranchForm({
+      branch_name: branch.branch_name || "",
+      address: branch.address || "",
+      admin_name: branch.admin_name || "",
+      admin_email: branch.admin_email || "",
+      admin_password: "",
+      admin_phone: branch.admin_phone || "",
+      vertical: branch.vertical || "offline_physiotherapy",
+    });
+  };
+
+  const updateBranchNow = async (e) => {
+    e.preventDefault();
+    if (!editingBranch) return;
+    try {
+      await updateBranch(editingBranch.id, {
+        branch_name: branchForm.branch_name,
+        address: branchForm.address,
+        admin_name: branchForm.admin_name,
+        admin_phone: branchForm.admin_phone,
+        vertical: branchForm.vertical,
+      });
+      setEditingBranch(null);
+      setBranchForm(defaultBranchForm);
+      toast.success("Branch updated");
+      await loadBranches();
+      await loadDashboard();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Update failed");
+    }
+  };
+
+  const deleteBranchNow = async (branchId) => {
+    try {
+      await deleteBranch(branchId);
+      setDeletingBranchId(null);
+      toast.success("Branch deleted");
+      await loadBranches();
+      await loadDashboard();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Delete failed");
     }
   };
 
@@ -334,6 +387,13 @@ export const BusinessLeadsDashboard = () => {
           showBranchForm={showBranchForm}
           setShowBranchForm={setShowBranchForm}
           createBranchNow={createBranchNow}
+          editingBranch={editingBranch}
+          openEditBranch={openEditBranch}
+          setEditingBranch={setEditingBranch}
+          updateBranchNow={updateBranchNow}
+          deletingBranchId={deletingBranchId}
+          setDeletingBranchId={setDeletingBranchId}
+          deleteBranchNow={deleteBranchNow}
         />
       )}
 
@@ -541,41 +601,23 @@ function DashboardTab({ summary, loading }) {
 }
 
 /* ─── Branches Tab ─── */
-function BranchesTab({ branches, branchForm, setBranchForm, showBranchForm, setShowBranchForm, createBranchNow }) {
+function BranchesTab({ branches, branchForm, setBranchForm, showBranchForm, setShowBranchForm, createBranchNow, editingBranch, openEditBranch, setEditingBranch, updateBranchNow, deletingBranchId, setDeletingBranchId, deleteBranchNow }) {
+  const closeForm = () => {
+    setShowBranchForm(false);
+    setEditingBranch(null);
+    setBranchForm({ branch_name: "", address: "", admin_name: "", admin_email: "", admin_password: "", admin_phone: "", vertical: "offline_physiotherapy" });
+  };
+
   return (
     <div className="space-y-4" data-testid="bd-branches-content">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-slate-800" data-testid="bd-branches-title">Branches ({branches.length})</h2>
-        <Button size="sm" onClick={() => setShowBranchForm(!showBranchForm)} data-testid="bd-branches-add-btn">
+        <Button size="sm" onClick={() => { closeForm(); setShowBranchForm(true); }} data-testid="bd-branches-add-btn">
           <Plus className="mr-1 h-4 w-4" /> Add Branch
         </Button>
       </div>
 
-      {showBranchForm && (
-        <Card className="border-sky-200 bg-sky-50/30" data-testid="bd-branch-form-card">
-          <CardContent className="pt-5">
-            <form onSubmit={createBranchNow} className="grid gap-3 sm:grid-cols-2" data-testid="bd-branch-form">
-              <Input value={branchForm.branch_name} onChange={(e) => setBranchForm((p) => ({ ...p, branch_name: e.target.value }))} placeholder="Branch Name" data-testid="bd-branch-name-input" />
-              <Input value={branchForm.address} onChange={(e) => setBranchForm((p) => ({ ...p, address: e.target.value }))} placeholder="Address" data-testid="bd-branch-address-input" />
-              <Input value={branchForm.admin_name} onChange={(e) => setBranchForm((p) => ({ ...p, admin_name: e.target.value }))} placeholder="Admin Name" data-testid="bd-branch-admin-name-input" />
-              <Input value={branchForm.admin_email} onChange={(e) => setBranchForm((p) => ({ ...p, admin_email: e.target.value }))} placeholder="Admin Email" data-testid="bd-branch-admin-email-input" />
-              <Input value={branchForm.admin_password} onChange={(e) => setBranchForm((p) => ({ ...p, admin_password: e.target.value }))} placeholder="Admin Password" type="password" data-testid="bd-branch-admin-password-input" />
-              <Input value={branchForm.admin_phone} onChange={(e) => setBranchForm((p) => ({ ...p, admin_phone: e.target.value }))} placeholder="Admin Phone" data-testid="bd-branch-admin-phone-input" />
-              <select value={branchForm.vertical} onChange={(e) => setBranchForm((p) => ({ ...p, vertical: e.target.value }))} className="h-9 rounded-md border border-slate-200 bg-white px-3 text-sm" data-testid="bd-branch-vertical-select">
-                <option value="offline_physiotherapy">Offline Physiotherapy</option>
-                <option value="online_physiotherapy">Online Physiotherapy</option>
-                <option value="online_fitness">Online Fitness</option>
-                <option value="offline_fitness_gym">Offline Fitness / Gym</option>
-              </select>
-              <div className="flex items-end gap-2">
-                <Button type="submit" data-testid="bd-branch-submit-btn">Create Branch</Button>
-                <Button type="button" variant="outline" onClick={() => setShowBranchForm(false)} data-testid="bd-branch-cancel-btn">Cancel</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
+      {/* Branch Table */}
       <div className="overflow-auto rounded-lg border border-slate-200" data-testid="bd-branches-table">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs text-slate-500">
@@ -585,12 +627,13 @@ function BranchesTab({ branches, branchForm, setBranchForm, showBranchForm, setS
               <th className="px-3 py-2 font-medium">Admin</th>
               <th className="px-3 py-2 font-medium">Vertical</th>
               <th className="px-3 py-2 font-medium">Created</th>
+              <th className="px-3 py-2 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
             {branches.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-slate-400">No branches yet</td>
+                <td colSpan={6} className="px-3 py-6 text-center text-slate-400">No branches yet</td>
               </tr>
             ) : (
               branches.map((b) => (
@@ -602,12 +645,98 @@ function BranchesTab({ branches, branchForm, setBranchForm, showBranchForm, setS
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">{b.vertical}</span>
                   </td>
                   <td className="px-3 py-2 text-xs text-slate-400">{b.created_at?.slice(0, 10)}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex gap-1">
+                      <button type="button" onClick={() => openEditBranch(b)} className="rounded-md border border-slate-200 p-1.5 text-sky-600 hover:bg-sky-50" data-testid={`bd-branch-edit-${b.id}`}>
+                        <Edit3 className="h-3.5 w-3.5" />
+                      </button>
+                      <button type="button" onClick={() => setDeletingBranchId(b.id)} className="rounded-md border border-slate-200 p-1.5 text-red-500 hover:bg-red-50" data-testid={`bd-branch-delete-${b.id}`}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+
+      {/* Add Branch Popup */}
+      {showBranchForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={(e) => { if (e.target === e.currentTarget) closeForm(); }} data-testid="bd-branch-modal-overlay">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl" data-testid="bd-branch-add-modal">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-800">Add New Branch</h3>
+              <button type="button" onClick={closeForm} className="rounded-md p-1 hover:bg-slate-100" data-testid="bd-branch-modal-close">
+                <X className="h-5 w-5 text-slate-400" />
+              </button>
+            </div>
+            <form onSubmit={createBranchNow} className="space-y-3" data-testid="bd-branch-form">
+              <Input value={branchForm.branch_name} onChange={(e) => setBranchForm((p) => ({ ...p, branch_name: e.target.value }))} placeholder="Branch Name *" data-testid="bd-branch-name-input" />
+              <Input value={branchForm.address} onChange={(e) => setBranchForm((p) => ({ ...p, address: e.target.value }))} placeholder="Address" data-testid="bd-branch-address-input" />
+              <Input value={branchForm.admin_name} onChange={(e) => setBranchForm((p) => ({ ...p, admin_name: e.target.value }))} placeholder="Admin Name" data-testid="bd-branch-admin-name-input" />
+              <Input value={branchForm.admin_email} onChange={(e) => setBranchForm((p) => ({ ...p, admin_email: e.target.value }))} placeholder="Admin Email *" data-testid="bd-branch-admin-email-input" />
+              <Input value={branchForm.admin_password} onChange={(e) => setBranchForm((p) => ({ ...p, admin_password: e.target.value }))} placeholder="Admin Password *" type="password" data-testid="bd-branch-admin-password-input" />
+              <Input value={branchForm.admin_phone} onChange={(e) => setBranchForm((p) => ({ ...p, admin_phone: e.target.value }))} placeholder="Admin Phone" data-testid="bd-branch-admin-phone-input" />
+              <select value={branchForm.vertical} onChange={(e) => setBranchForm((p) => ({ ...p, vertical: e.target.value }))} className="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-sm" data-testid="bd-branch-vertical-select">
+                <option value="offline_physiotherapy">Offline Physiotherapy</option>
+                <option value="online_physiotherapy">Online Physiotherapy</option>
+                <option value="online_fitness">Online Fitness</option>
+                <option value="offline_fitness_gym">Offline Fitness / Gym</option>
+              </select>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={closeForm}>Cancel</Button>
+                <Button type="submit" className="bg-sky-600 text-white hover:bg-sky-700" data-testid="bd-branch-submit-btn">Create Branch</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Branch Popup */}
+      {editingBranch && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={(e) => { if (e.target === e.currentTarget) closeForm(); }} data-testid="bd-branch-edit-overlay">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl" data-testid="bd-branch-edit-modal">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-800">Edit Branch</h3>
+              <button type="button" onClick={closeForm} className="rounded-md p-1 hover:bg-slate-100" data-testid="bd-branch-edit-close">
+                <X className="h-5 w-5 text-slate-400" />
+              </button>
+            </div>
+            <form onSubmit={updateBranchNow} className="space-y-3" data-testid="bd-branch-edit-form">
+              <Input value={branchForm.branch_name} onChange={(e) => setBranchForm((p) => ({ ...p, branch_name: e.target.value }))} placeholder="Branch Name" data-testid="bd-branch-edit-name-input" />
+              <Input value={branchForm.address} onChange={(e) => setBranchForm((p) => ({ ...p, address: e.target.value }))} placeholder="Address" data-testid="bd-branch-edit-address-input" />
+              <Input value={branchForm.admin_name} onChange={(e) => setBranchForm((p) => ({ ...p, admin_name: e.target.value }))} placeholder="Admin Name" data-testid="bd-branch-edit-admin-name-input" />
+              <Input value={branchForm.admin_phone} onChange={(e) => setBranchForm((p) => ({ ...p, admin_phone: e.target.value }))} placeholder="Admin Phone" data-testid="bd-branch-edit-phone-input" />
+              <select value={branchForm.vertical} onChange={(e) => setBranchForm((p) => ({ ...p, vertical: e.target.value }))} className="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-sm" data-testid="bd-branch-edit-vertical-select">
+                <option value="offline_physiotherapy">Offline Physiotherapy</option>
+                <option value="online_physiotherapy">Online Physiotherapy</option>
+                <option value="online_fitness">Online Fitness</option>
+                <option value="offline_fitness_gym">Offline Fitness / Gym</option>
+              </select>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={closeForm}>Cancel</Button>
+                <Button type="submit" className="bg-sky-600 text-white hover:bg-sky-700" data-testid="bd-branch-edit-submit">Update Branch</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Popup */}
+      {deletingBranchId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={(e) => { if (e.target === e.currentTarget) setDeletingBranchId(null); }} data-testid="bd-branch-delete-overlay">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl" data-testid="bd-branch-delete-modal">
+            <h3 className="mb-2 text-lg font-semibold text-slate-800">Delete Branch?</h3>
+            <p className="mb-4 text-sm text-slate-500">This will permanently delete the branch and its admin user. This action cannot be undone.</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeletingBranchId(null)} data-testid="bd-branch-delete-cancel">Cancel</Button>
+              <Button onClick={() => deleteBranchNow(deletingBranchId)} className="bg-red-600 text-white hover:bg-red-700" data-testid="bd-branch-delete-confirm">Delete</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

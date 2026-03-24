@@ -1893,6 +1893,39 @@ async def v3_create_branch(payload: V3BranchCreate, _: V3UserOut = Depends(v3_re
     return V3BranchOut(**branch)
 
 
+class V3BranchUpdate(BaseModel):
+    branch_name: Optional[str] = None
+    address: Optional[str] = None
+    admin_name: Optional[str] = None
+    admin_email: Optional[str] = None
+    admin_phone: Optional[str] = None
+    vertical: Optional[str] = None
+
+
+@v3_router.put("/branches/{branch_id}", response_model=V3BranchOut)
+async def v3_update_branch(branch_id: str, payload: V3BranchUpdate, _: V3UserOut = Depends(v3_require_roles("super_admin", "business_dev"))):
+    existing = await v3_col("branches").find_one({"id": branch_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Branch not found")
+    updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    await v3_col("branches").update_one({"id": branch_id}, {"$set": updates})
+    updated = await v3_col("branches").find_one({"id": branch_id}, {"_id": 0})
+    return V3BranchOut(**updated)
+
+
+@v3_router.delete("/branches/{branch_id}")
+async def v3_delete_branch(branch_id: str, _: V3UserOut = Depends(v3_require_roles("super_admin", "business_dev"))):
+    existing = await v3_col("branches").find_one({"id": branch_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Branch not found")
+    await v3_col("branches").delete_one({"id": branch_id})
+    if existing.get("admin_user_id"):
+        await v3_col("users").delete_one({"id": existing["admin_user_id"]})
+    return {"message": "Branch deleted"}
+
+
 @v3_router.get("/doctors", response_model=List[V3DoctorOut])
 async def v3_get_doctors(branch_id: Optional[str] = None, user: V3UserOut = Depends(v3_current_user)):
     query: Dict[str, object] = {}

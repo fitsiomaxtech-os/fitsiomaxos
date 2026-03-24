@@ -51,6 +51,8 @@ export const createVertical = async (payload) => (await api.post("/verticals", p
 
 export const getBranches = async () => (await api.get("/branches")).data;
 export const createBranch = async (payload) => (await api.post("/branches", payload)).data;
+export const updateBranch = async (branchId, payload) => (await api.put(`/branches/${branchId}`, payload)).data;
+export const deleteBranch = async (branchId) => (await api.delete(`/branches/${branchId}`)).data;
 
 export const getDoctors = async (params) => (await api.get("/doctors", { params })).data;
 export const createDoctor = async (payload) => (await api.post("/doctors", payload)).data;
