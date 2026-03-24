@@ -221,7 +221,7 @@ export const CRMPage = ({ auth, onLogout }) => {
 
   const role = auth.user.role;
   const roleLabel = ROLE_META[role]?.label || role;
-  const boardTitle = role === "pre_sales" ? "Pre-sales Board" : `${roleLabel} Board`;
+  const boardTitle = role === "pre_sales" ? "Pre-sales Master View" : `${roleLabel} Master View`;
 
   const [preSalesStageTab, setPreSalesStageTab] = useState("All");
   const [preSalesViewType, setPreSalesViewType] = useState("kanban");
@@ -589,34 +589,28 @@ export const CRMPage = ({ auth, onLogout }) => {
       <div className="w-full space-y-6" data-testid="role-board-full-width-wrap">
         <header className="sticky top-0 z-20 rounded-xl bg-gradient-to-r from-sky-700 to-sky-600 p-5 shadow-lg" data-testid="role-board-header">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <img src={LOGO_URL} alt="Fitsiomax" className="h-20 w-20 rounded-xl bg-white object-contain p-2 shadow-md" data-testid="header-left-logo" />
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-sky-100" data-testid="role-board-brand-subtitle">
-                  FITSIOMAX OS
+                <p className="text-sm font-bold tracking-wide text-white" data-testid="role-board-brand-subtitle">
+                  FitsiomaxOS
                 </p>
-                <h1 className="font-heading text-3xl font-bold text-white" data-testid="role-board-title">
+                <h1 className="font-heading text-2xl font-bold text-white/90" data-testid="role-board-title">
                   {boardTitle}
                 </h1>
-                <p className="text-sm text-sky-100" data-testid="role-board-user-info">
-                  {auth.user.full_name} · {auth.user.email}
-                </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
-                data-testid="role-board-profile-button"
-              >
-                <UserRound className="mr-2 h-4 w-4" /> {roleLabel} Profile
-              </Button>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-sm" data-testid="role-board-greeting">
+                <UserRound className="h-5 w-5 text-white" />
+                <span className="text-sm font-medium text-white" data-testid="role-board-user-greeting">Hi {auth.user.full_name?.split(" ")[0]}</span>
+              </div>
               <Button
                 variant="outline"
                 className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
                 data-testid="role-board-settings-button"
               >
-                <Settings className="mr-2 h-4 w-4" /> Settings
+                <Settings className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
@@ -624,7 +618,7 @@ export const CRMPage = ({ auth, onLogout }) => {
                 className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
                 data-testid="role-board-refresh-button"
               >
-                <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+                <RefreshCw className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
@@ -632,7 +626,7 @@ export const CRMPage = ({ auth, onLogout }) => {
                 className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
                 data-testid="role-board-logout-button"
               >
-                <LogOut className="mr-2 h-4 w-4" /> Logout
+                <LogOut className="h-4 w-4" />
               </Button>
             </div>
           </div>
