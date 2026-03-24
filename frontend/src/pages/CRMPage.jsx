@@ -229,6 +229,10 @@ export const CRMPage = ({ auth, onLogout }) => {
       branch_id: branchFilter || undefined,
     };
 
+    const canManageSheets = ["business_dev", "super_admin"].includes(userRole);
+
+    const connectionsPromise = canManageSheets ? safeCall(() => getSheetConnections(), []) : Promise.resolve([]);
+
     const [verticalRows, branchRows, doctorRows, leadRows, appointmentRows, masterRows, connectionRows] = await Promise.all([
       safeCall(() => getVerticals(), []),
       safeCall(() => getBranches(), []),
@@ -236,7 +240,7 @@ export const CRMPage = ({ auth, onLogout }) => {
       safeCall(() => getLeads(leadsParams), []),
       safeCall(() => getAppointments(appointmentView === "all" ? {} : { view: appointmentView }), []),
       safeCall(() => getMasterBoard(), { stage_counts: {} }),
-      safeCall(() => getSheetConnections(), []),
+      connectionsPromise,
     ]);
 
     setVerticals(verticalRows);
@@ -670,7 +674,11 @@ export const CRMPage = ({ auth, onLogout }) => {
                     <Button variant="outline" className="border-slate-700" onClick={checkAvailability} data-testid="branch-check-availability-button">Check Available Doctors</Button>
                     <select value={selectedDoctorForBooking} onChange={(e) => setSelectedDoctorForBooking(e.target.value)} className="h-9 rounded-md border border-slate-700 bg-slate-950 px-3 text-sm" data-testid="branch-available-doctor-select">
                       <option value="">Choose available doctor</option>
-                      {availableDoctors.map((doctor) => <option key={doctor.id} value={doctor.id}>{doctor.full_name} ({doctor.profile_type})</option>)}
+                      {availableDoctors.map((doctor) => (
+                        <option key={doctor.id} value={doctor.id}>
+                          {`${String(doctor.full_name)} (${String(doctor.profile_type || "physio")})`}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <Button className="mt-2 bg-sky-500 text-slate-950" onClick={doBookAppointment} data-testid="branch-book-appointment-button">Book Appointment</Button>

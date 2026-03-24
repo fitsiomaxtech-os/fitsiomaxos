@@ -1665,6 +1665,16 @@ async def v3_seed() -> None:
                 }
             )
 
+    first_branch = await v3_col("branches").find_one({}, {"_id": 0, "id": 1})
+    if first_branch:
+        await v3_col("users").update_many(
+            {
+                "email": {"$in": ["headphysio@fitsiomax.com", "physio@fitsiomax.com"]},
+                "branch_id": None,
+            },
+            {"$set": {"branch_id": first_branch["id"]}},
+        )
+
 
 @app.on_event("startup")
 async def v3_startup_seed():
@@ -1769,13 +1779,22 @@ async def v3_create_branch(payload: V3BranchCreate, _: V3UserOut = Depends(v3_re
         "created_at": now_iso(),
     }
     await v3_col("branches").insert_one(branch.copy())
+
+    await v3_col("users").update_many(
+        {
+            "email": {"$in": ["headphysio@fitsiomax.com", "physio@fitsiomax.com"]},
+            "branch_id": None,
+        },
+        {"$set": {"branch_id": branch_id}},
+    )
+
     return V3BranchOut(**branch)
 
 
 @v3_router.get("/doctors", response_model=List[V3DoctorOut])
 async def v3_get_doctors(branch_id: Optional[str] = None, user: V3UserOut = Depends(v3_current_user)):
     query: Dict[str, object] = {}
-    if user.role in ["branch_admin", "head_physio", "physio"]:
+    if user.role in ["branch_admin", "head_physio", "physio"] and user.branch_id:
         query["branch_id"] = user.branch_id
     elif branch_id:
         query["branch_id"] = branch_id
@@ -1834,7 +1853,7 @@ async def v3_get_leads(
     if source_tab:
         query["source_tab"] = source_tab
 
-    if user.role in ["branch_admin", "head_physio", "physio"]:
+    if user.role in ["branch_admin", "head_physio", "physio"] and user.branch_id:
         query["branch_id"] = user.branch_id
     elif branch_id:
         query["branch_id"] = branch_id
@@ -1932,7 +1951,7 @@ async def v3_book_appointment(lead_id: str, payload: V3BookAppointmentInput, use
 @v3_router.get("/appointments", response_model=List[V3AppointmentOut])
 async def v3_get_appointments(view: Optional[str] = None, user: V3UserOut = Depends(v3_current_user)):
     query: Dict[str, object] = {}
-    if user.role in ["branch_admin", "head_physio", "physio"]:
+    if user.role == "branch_admin" and user.branch_id:
         query["branch_id"] = user.branch_id
     if view == "today":
         today = datetime.now(timezone.utc).date().isoformat()
