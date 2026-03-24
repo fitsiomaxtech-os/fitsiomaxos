@@ -167,7 +167,7 @@ const defaultSyncPayload = `{
 }`;
 
 const LOGO_URL =
-  "https://static.prod-images.emergentagent.com/jobs/3d74aa9e-a241-4207-b148-2bbe29802707/images/1a991dc24d5cddef439f1242bbf0c231d68c9b87975b230f62e0951a9345db27.png";
+  "https://customer-assets.emergentagent.com/job_3d74aa9e-a241-4207-b148-2bbe29802707/artifacts/nozl77ti_Logo%20Icon.webp";
 
 export const CRMPage = ({ auth, onLogout }) => {
   const [masterBoard, setMasterBoard] = useState({ stage_counts: {} });
