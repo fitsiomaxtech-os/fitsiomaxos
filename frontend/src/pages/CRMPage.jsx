@@ -583,46 +583,47 @@ export const CRMPage = ({ auth, onLogout }) => {
   );
 
   return (
-    <div className="min-h-screen bg-white px-4 py-6 md:px-8 md:py-10" data-testid="role-board-page">
+    <div className="min-h-screen bg-slate-50" data-testid="role-board-page">
       <Toaster richColors position="top-right" />
 
-      <div className="w-full space-y-6" data-testid="role-board-full-width-wrap">
-        <header className="sticky top-0 z-20 rounded-xl bg-gradient-to-r from-sky-700 to-sky-600 p-5 shadow-lg" data-testid="role-board-header">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="w-full" data-testid="role-board-full-width-wrap">
+        <header className="sticky top-0 z-20 w-full border-b border-slate-200 bg-white px-6 py-4 shadow-sm" data-testid="role-board-header">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <img src={LOGO_URL} alt="Fitsiomax" className="h-20 w-20 rounded-xl bg-white object-contain p-2 shadow-md" data-testid="header-left-logo" />
+              <img src={LOGO_URL} alt="Fitsiomax" className="h-14 w-14 rounded-lg object-contain" data-testid="header-left-logo" />
               <div>
-                <p className="text-sm font-bold tracking-wide text-white" data-testid="role-board-brand-subtitle">
+                <p className="text-xs font-semibold tracking-wide text-sky-600" data-testid="role-board-brand-subtitle">
                   FitsiomaxOS
                 </p>
-                <h1 className="text-lg font-semibold text-white/90" data-testid="role-board-title">
+                <h1 className="text-2xl font-bold text-slate-900" data-testid="role-board-title">
                   {boardTitle}
                 </h1>
-                <p className="text-sm text-sky-100" data-testid="role-board-user-greeting">
-                  Hi {auth.user.full_name?.split(" ")[0]}
-                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-sky-700" data-testid="role-board-user-greeting">Hi {auth.user.full_name?.split(" ")[0]}</span>
               <Button
                 variant="outline"
-                className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
+                size="sm"
+                className="border-slate-200 text-slate-600 hover:bg-slate-50"
                 data-testid="role-board-settings-button"
               >
                 <Settings className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={loadEverything}
-                className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
+                className="border-slate-200 text-slate-600 hover:bg-slate-50"
                 data-testid="role-board-refresh-button"
               >
                 <RefreshCw className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={logout}
-                className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
+                className="border-slate-200 text-slate-600 hover:bg-slate-50"
                 data-testid="role-board-logout-button"
               >
                 <LogOut className="h-4 w-4" />
@@ -630,6 +631,8 @@ export const CRMPage = ({ auth, onLogout }) => {
             </div>
           </div>
         </header>
+
+        <div className="w-full space-y-6 px-6 py-6">
 
         {showPreSalesBoard && (
           <PreSalesBoard />
@@ -879,6 +882,7 @@ export const CRMPage = ({ auth, onLogout }) => {
             </CardContent>
           </Card>
         )}
+        </div>
       </div>
 
       {loading && (
