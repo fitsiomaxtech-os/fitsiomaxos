@@ -21,7 +21,8 @@ Build FITSIOMAX OS with:
 - Restrict frontend scope to **Screen 1 only**.
 - Provide mocked Google Sheet lead JSON preview (no live sync yet).
 
-## What's Implemented (2026-03-24)
+## What's Implemented
+
 ### Screen 1 Complete
 - Rebuilt Login screen to white/blue minimal SaaS style.
 - Added role-access selection screen after login with exactly 6 role cards.
@@ -31,60 +32,63 @@ Build FITSIOMAX OS with:
 - Built separate role-based boards for all 6 users using real backend data.
 - Implemented flow actions by role.
 
-### Pre-sales UX Focus Update
-- Fixed sticky header with profile/settings/refresh/logout.
-- Kanban/List toggle, stage-tab filtering, custom fields, date filters, lead editing.
+### Business Development Dashboard (5 Tabs)
+- Self-contained `BusinessLeadsDashboard.jsx` with:
+  - **Dashboard**: Metrics, pipeline, source/branch breakdown, recent leads
+  - **Branches**: Branch list + create form
+  - **Lead Master**: Full leads table with qualify/assign
+  - **Google Sheet Connection**: Create + mapping + sync
+  - **Lead Source**: Aggregation with stage breakdown
+- Backend: `GET /api/v3/dashboard/bd-summary`, `GET /api/v3/lead-sources`
 
-### Full-Width + Multicolor UI Enhancement
-- Full-width layout, pastel multicolor stage system.
-
-### Logo + Pre-sales Lead Module Enhancement
-- FITSIOMAX logo in header, custom field builder, date range filters.
-
-### Business Development Dashboard (2026-02-XX)
-- **NEW**: Created self-contained `BusinessLeadsDashboard.jsx` component with 5 tabs:
-  - **Dashboard**: Top metrics (Total Leads, Branches, Appointments, Completed, Sheet Connections), Lead Pipeline stage counts, Leads by Source/Branch breakdown, Recent Leads table.
-  - **Branches**: Branch list table, Add Branch form with admin creation, vertical selection.
-  - **Lead Master**: Full leads table with search, stage/branch/date filters. Qualify and Assign actions for leads.
-  - **Google Sheet Connection**: Create connections, existing connections list with selection, field mapping configuration, JSON sync execution.
-  - **Lead Source**: Source aggregation table with stage breakdown per source.
-- **NEW**: Backend endpoints:
-  - `GET /api/v3/dashboard/bd-summary` - Aggregated metrics for BD dashboard.
-  - `GET /api/v3/lead-sources` - Lead source aggregation with stage breakdown.
-- Updated BD role permissions to allow qualify and assign-branch operations.
-- Frontend API functions: `getBdSummary()`, `getLeadSources()`.
-
-### Post-QA Fixes Applied
-- Fixed default seeded branch linkage.
-- Fixed confirm endpoint scoping.
-- Replaced hardcoded sheet callback URL.
-- Added slot normalization.
+### Pre-sales Board Redesign (2026-02-XX)
+- **NEW**: Self-contained `PreSalesBoard.jsx` replacing old cluttered inline UI:
+  - **Stage metric cards**: Total Leads, New Lead, Pre-sales Qualified, Assigned to Branch
+  - **Search bar**: Filter by name, email, phone
+  - **Add New button**: Popup modal to create leads
+  - **Date Filter**: Collapsible date range picker
+  - **Kanban/List toggle**: Kanban shows 3 columns, List shows table
+  - **Stage tabs**: Filter by stage with live counts
+  - **Lead Detail Modal** (click any lead card/row):
+    - Overview tab: Contact info, extra fields, lead summary (editable), Move to Stage buttons
+    - Remarks tab: Add/view timestamped remarks
+    - Follow-up tab: Schedule/complete follow-ups
+    - Activity tab: Stage change activity log
+- **NEW Backend endpoints**:
+  - `POST/GET /api/v3/leads/{id}/remarks`
+  - `POST/GET /api/v3/leads/{id}/follow-ups`
+  - `POST /api/v3/leads/{id}/follow-ups/{fid}/complete`
+  - `GET /api/v3/leads/{id}/activity`
+  - `POST /api/v3/leads/{id}/move-stage`
 
 ## Validation Notes
-- Iteration 14 (BD Dashboard): All 5 tabs functional, backend APIs correct, 100% frontend pass, role permissions verified.
-- Previous iterations (1-13): All pass for login, role boards, pre-sales, full-width UI, logo, custom fields, date filters.
+- Iteration 15: Pre-sales Board — 100% backend (19/19), 100% frontend
+- Iteration 14: BD Dashboard — All 5 tabs functional
+- Previous iterations (1-13): Login, role boards, full-width UI, logo, custom fields, date filters
 
-## Prioritized Backlog (Next Screens)
+## Prioritized Backlog
+
 ### P0
-- Connect real Google OAuth credentials for live Sheets token flow.
-- Add "Add New" and "Connect Leads" buttons to Pre-sales view.
+- Connect real Google OAuth credentials for live Sheets token flow
+- Strengthen branch scoping for non-admin roles
 
 ### P1
-- Strengthen branch scoping for all non-admin roles.
-- Fix recurring hydration warning (span inside option element).
-- Secure password hashing (plain text currently).
-- Backend refactoring (server.py 2300+ lines).
-- Frontend refactoring (CRMPage.jsx 1000+ lines).
+- Refine Branch Admin board
+- Refine Head Physio and Physio boards
+- UI for assigning users to branches
+- Secure password hashing (plain text currently)
 
 ### P2
-- Add calendar month/week view with slot drag-reschedule.
-- Add notification hooks for appointment reminders.
-- Auto-sync scheduler for connected sheets.
-- Branch analytics cards.
+- Backend refactoring (server.py 2400+ lines)
+- Frontend cleanup (unused state/variables from old pre-sales UI in CRMPage.jsx)
+- Visual weekly calendar for appointment booking
+- Auto-sync scheduler for sheets
+- Branch analytics cards
+- Notification hooks
 
 ## Next Tasks List
-1. Add "Add New" and "Connect Leads" buttons to Pre-sales view.
-2. Build live Google OAuth connect + token status for Business Dev.
-3. Add auto-sync job settings for connected sheets.
-4. Secure password hashing.
-5. Backend/frontend refactoring.
+1. Build live Google OAuth connect + token status for Business Dev
+2. Refine Branch Admin board UX
+3. Add auto-sync job settings for connected sheets
+4. Secure password hashing
+5. Backend/frontend refactoring
