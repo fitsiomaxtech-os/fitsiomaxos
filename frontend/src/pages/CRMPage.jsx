@@ -167,7 +167,7 @@ const defaultSyncPayload = `{
 }`;
 
 const LOGO_URL =
-  "https://customer-assets.emergentagent.com/job_therapy-crm-board/artifacts/u4bafq34_Fitsiomax-logo.webp";
+  "https://static.prod-images.emergentagent.com/jobs/3d74aa9e-a241-4207-b148-2bbe29802707/images/1a991dc24d5cddef439f1242bbf0c231d68c9b87975b230f62e0951a9345db27.png";
 
 export const CRMPage = ({ auth, onLogout }) => {
   const [masterBoard, setMasterBoard] = useState({ stage_counts: {} });
@@ -590,7 +590,7 @@ export const CRMPage = ({ auth, onLogout }) => {
         <header className="sticky top-0 z-20 rounded-xl bg-gradient-to-r from-sky-700 to-sky-600 p-5 shadow-lg" data-testid="role-board-header">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <img src={LOGO_URL} alt="Fitsiomax" className="h-16 w-16 rounded-lg bg-white object-contain p-1.5 shadow-md" data-testid="header-left-logo" />
+              <img src={LOGO_URL} alt="Fitsiomax" className="h-20 w-20 rounded-xl bg-white object-contain p-2 shadow-md" data-testid="header-left-logo" />
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-sky-100" data-testid="role-board-brand-subtitle">
                   FITSIOMAX OS
