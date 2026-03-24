@@ -83,3 +83,11 @@ export const addTeamMember = async (payload) => (await api.post("/team-members",
 
 export const getBdSummary = async () => (await api.get("/dashboard/bd-summary")).data;
 export const getLeadSources = async () => (await api.get("/lead-sources")).data;
+
+export const getLeadRemarks = async (leadId) => (await api.get(`/leads/${leadId}/remarks`)).data;
+export const addLeadRemark = async (leadId, payload) => (await api.post(`/leads/${leadId}/remarks`, payload)).data;
+export const getLeadFollowUps = async (leadId) => (await api.get(`/leads/${leadId}/follow-ups`)).data;
+export const addLeadFollowUp = async (leadId, payload) => (await api.post(`/leads/${leadId}/follow-ups`, payload)).data;
+export const completeLeadFollowUp = async (leadId, followupId) => (await api.post(`/leads/${leadId}/follow-ups/${followupId}/complete`)).data;
+export const getLeadActivity = async (leadId) => (await api.get(`/leads/${leadId}/activity`)).data;
+export const moveLeadStage = async (leadId, payload) => (await api.post(`/leads/${leadId}/move-stage`, payload)).data;

@@ -2120,6 +2120,106 @@ async def v3_complete_appointment(appointment_id: str, _: V3UserOut = Depends(v3
     return V3AppointmentOut(**appointment)
 
 
+# ─── Lead Detail Endpoints (Remarks, Follow-ups, Activity, Move Stage) ───
+
+class V3RemarkCreate(BaseModel):
+    text: str
+
+class V3FollowUpCreate(BaseModel):
+    note: str
+    scheduled_date: str
+
+class V3MoveStageInput(BaseModel):
+    stage: str
+
+
+@v3_router.get("/leads/{lead_id}/remarks")
+async def v3_get_remarks(lead_id: str, _: V3UserOut = Depends(v3_current_user)):
+    rows = await v3_col("lead_remarks").find({"lead_id": lead_id}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return rows
+
+
+@v3_router.post("/leads/{lead_id}/remarks")
+async def v3_add_remark(lead_id: str, payload: V3RemarkCreate, user: V3UserOut = Depends(v3_current_user)):
+    lead = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0, "id": 1})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    remark = {
+        "id": str(uuid.uuid4()),
+        "lead_id": lead_id,
+        "text": payload.text,
+        "created_by": user.full_name,
+        "created_by_role": user.role,
+        "created_at": now_iso(),
+    }
+    await v3_col("lead_remarks").insert_one(remark.copy())
+    return remark
+
+
+@v3_router.get("/leads/{lead_id}/follow-ups")
+async def v3_get_follow_ups(lead_id: str, _: V3UserOut = Depends(v3_current_user)):
+    rows = await v3_col("lead_followups").find({"lead_id": lead_id}, {"_id": 0}).sort("scheduled_date", 1).to_list(200)
+    return rows
+
+
+@v3_router.post("/leads/{lead_id}/follow-ups")
+async def v3_add_follow_up(lead_id: str, payload: V3FollowUpCreate, user: V3UserOut = Depends(v3_current_user)):
+    lead = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0, "id": 1})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    followup = {
+        "id": str(uuid.uuid4()),
+        "lead_id": lead_id,
+        "note": payload.note,
+        "scheduled_date": payload.scheduled_date,
+        "status": "pending",
+        "created_by": user.full_name,
+        "created_at": now_iso(),
+    }
+    await v3_col("lead_followups").insert_one(followup.copy())
+    return followup
+
+
+@v3_router.post("/leads/{lead_id}/follow-ups/{followup_id}/complete")
+async def v3_complete_follow_up(lead_id: str, followup_id: str, _: V3UserOut = Depends(v3_current_user)):
+    result = await v3_col("lead_followups").update_one(
+        {"id": followup_id, "lead_id": lead_id},
+        {"$set": {"status": "completed"}},
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Follow-up not found")
+    return {"message": "Follow-up completed"}
+
+
+@v3_router.get("/leads/{lead_id}/activity")
+async def v3_get_activity(lead_id: str, _: V3UserOut = Depends(v3_current_user)):
+    rows = await v3_col("lead_activity").find({"lead_id": lead_id}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return rows
+
+
+@v3_router.post("/leads/{lead_id}/move-stage")
+async def v3_move_stage(lead_id: str, payload: V3MoveStageInput, user: V3UserOut = Depends(v3_require_roles("pre_sales", "business_dev", "super_admin", "branch_admin"))):
+    if payload.stage not in V3_STAGES:
+        raise HTTPException(status_code=400, detail="Invalid stage")
+    lead = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    old_stage = lead.get("stage", "Unknown")
+    await v3_col("leads").update_one({"id": lead_id}, {"$set": {"stage": payload.stage, "updated_at": now_iso()}})
+    activity = {
+        "id": str(uuid.uuid4()),
+        "lead_id": lead_id,
+        "action": "stage_change",
+        "details": f"Moved from '{old_stage}' to '{payload.stage}'",
+        "created_by": user.full_name,
+        "created_by_role": user.role,
+        "created_at": now_iso(),
+    }
+    await v3_col("lead_activity").insert_one(activity.copy())
+    updated = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
+    return V3LeadOut(**updated)
+
+
 @v3_router.post("/sheets/connections")
 async def v3_create_sheet_connection(payload: V3SheetConnectionCreate, _: V3UserOut = Depends(v3_require_roles("business_dev", "super_admin"))):
     callback_url = os.environ.get("GOOGLE_SHEETS_CALLBACK_URL") or os.environ.get("GOOGLE_REDIRECT_URI") or ""

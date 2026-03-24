@@ -44,6 +44,7 @@ import {
 } from "@/lib/api";
 import { toast, Toaster } from "@/components/ui/sonner";
 import { BusinessLeadsDashboard } from "@/components/BusinessLeadsDashboard";
+import { PreSalesBoard } from "@/components/PreSalesBoard";
 
 const ROLE_META = {
   super_admin: { label: "Super Admin", icon: ShieldCheck },
@@ -220,7 +221,7 @@ export const CRMPage = ({ auth, onLogout }) => {
 
   const role = auth.user.role;
   const roleLabel = ROLE_META[role]?.label || role;
-  const boardTitle = role === "pre_sales" ? "Pre - sale s Board" : `${roleLabel} Board`;
+  const boardTitle = role === "pre_sales" ? "Pre-sales Board" : `${roleLabel} Board`;
 
   const [preSalesStageTab, setPreSalesStageTab] = useState("All");
   const [preSalesViewType, setPreSalesViewType] = useState("kanban");
@@ -639,168 +640,7 @@ export const CRMPage = ({ auth, onLogout }) => {
         </header>
 
         {showPreSalesBoard && (
-          <Card className="border-slate-200 bg-white" data-testid="presales-main-board-card">
-            <CardHeader>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <CardTitle className="text-base" data-testid="presales-main-board-title">
-                  Pre - sale s Board
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant={preSalesViewType === "kanban" ? "default" : "outline"}
-                    onClick={() => setPreSalesViewType("kanban")}
-                    data-testid="presales-view-kanban-button"
-                  >
-                    Kanban
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={preSalesViewType === "list" ? "default" : "outline"}
-                    onClick={() => setPreSalesViewType("list")}
-                    data-testid="presales-view-list-button"
-                  >
-                    List
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2 md:grid-cols-3" data-testid="presales-date-filter-row">
-                <Input type="date" value={leadDateFrom} onChange={(e) => setLeadDateFrom(e.target.value)} data-testid="presales-date-from-input" />
-                <Input type="date" value={leadDateTo} onChange={(e) => setLeadDateTo(e.target.value)} data-testid="presales-date-to-input" />
-                <Button variant="outline" onClick={() => { setLeadDateFrom(""); setLeadDateTo(""); }} data-testid="presales-date-clear-button">Clear Date Filter</Button>
-              </div>
-
-              <div className="grid gap-2 md:grid-cols-4" data-testid="presales-custom-field-builder">
-                <Input value={customFieldName} onChange={(e) => setCustomFieldName(e.target.value)} placeholder="Custom field name" data-testid="presales-custom-field-name-input" />
-                <select value={customFieldType} onChange={(e) => setCustomFieldType(e.target.value)} className="h-9 rounded-md border border-slate-200 px-3 text-sm" data-testid="presales-custom-field-type-select">
-                  <option value="text">Text</option>
-                  <option value="number">Number</option>
-                  <option value="date">Date</option>
-                  <option value="select">Select</option>
-                </select>
-                <Input value={customFieldOptions} onChange={(e) => setCustomFieldOptions(e.target.value)} placeholder="Options (comma separated)" data-testid="presales-custom-field-options-input" />
-                <Button onClick={addCustomFieldDef} data-testid="presales-custom-field-add-button">Add Custom Field</Button>
-              </div>
-
-              <div className="grid gap-2 md:grid-cols-2" data-testid="presales-lead-edit-panel">
-                <select value={editingLeadId} onChange={(e) => setEditingLeadId(e.target.value)} className="h-9 rounded-md border border-slate-200 px-3 text-sm" data-testid="presales-edit-lead-select">
-                  <option value="">Select lead to edit</option>
-                  {preSalesLeads.map((lead) => <option key={lead.id} value={lead.id}>{lead.name} · {lead.phone}</option>)}
-                </select>
-                <div />
-                <Input value={leadEditForm.name} onChange={(e) => setLeadEditForm((p) => ({ ...p, name: e.target.value }))} placeholder="Name" data-testid="presales-edit-name-input" />
-                <Input value={leadEditForm.phone} onChange={(e) => setLeadEditForm((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" data-testid="presales-edit-phone-input" />
-                <Input value={leadEditForm.email} onChange={(e) => setLeadEditForm((p) => ({ ...p, email: e.target.value }))} placeholder="Email" data-testid="presales-edit-email-input" />
-                <Input value={leadEditForm.notes} onChange={(e) => setLeadEditForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Notes" data-testid="presales-edit-notes-input" />
-
-                {customFieldDefs.map((field) => (
-                  <div key={field.name} className="md:col-span-1">
-                    {field.type === "select" ? (
-                      <select value={leadEditForm.extra_fields?.[field.name] || ""} onChange={(e) => setLeadEditForm((p) => ({ ...p, extra_fields: { ...p.extra_fields, [field.name]: e.target.value } }))} className="h-9 w-full rounded-md border border-slate-200 px-3 text-sm" data-testid={`presales-edit-custom-${field.name}`}>
-                        <option value="">{field.name}</option>
-                        {field.options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-                      </select>
-                    ) : (
-                      <Input
-                        type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
-                        value={leadEditForm.extra_fields?.[field.name] || ""}
-                        onChange={(e) => setLeadEditForm((p) => ({ ...p, extra_fields: { ...p.extra_fields, [field.name]: e.target.value } }))}
-                        placeholder={field.name}
-                        data-testid={`presales-edit-custom-${field.name}`}
-                      />
-                    )}
-                  </div>
-                ))}
-                <div className="md:col-span-2">
-                  <Button onClick={saveLeadEdit} variant="outline" data-testid="presales-edit-save-button">Save Lead Changes</Button>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2" data-testid="presales-stage-tabs-row">
-                <button
-                  type="button"
-                  onClick={() => setPreSalesStageTab("All")}
-                  className={`rounded-md border px-3 py-2 text-xs ${preSalesStageTab === "All" ? "border-sky-500 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-600"}`}
-                  data-testid="presales-stage-tab-all"
-                >
-                  All
-                </button>
-                {PIPELINE_STAGES.map((stage) => (
-                  <button
-                    key={stage}
-                    type="button"
-                    onClick={() => setPreSalesStageTab(stage)}
-                    className={`rounded-md border px-3 py-2 text-xs ${preSalesStageTab === stage ? STAGE_THEME[stage]?.active || "border-sky-500 bg-sky-50 text-sky-700" : STAGE_THEME[stage]?.inactive || "border-slate-200 bg-white text-slate-600"}`}
-                    data-testid={`presales-stage-tab-${stage}`}
-                  >
-                    {stage}
-                  </button>
-                ))}
-              </div>
-
-              {preSalesViewType === "kanban" ? (
-                <div className="flex gap-3 overflow-x-auto pb-2" data-testid="presales-kanban-board">
-                  {preSalesKanbanStages.map((stage) => (
-                    <div key={stage} className={`min-w-[280px] rounded-lg border p-3 ${STAGE_THEME[stage]?.column || "border-slate-200 bg-slate-50"}`} data-testid={`presales-kanban-column-${stage}`}>
-                      <p className="mb-2 text-sm font-semibold text-slate-700" data-testid={`presales-kanban-column-title-${stage}`}>
-                        {stage}
-                      </p>
-                      <div className="space-y-2">
-                        {preSalesLeads.filter((lead) => lead.stage === stage).map((lead) => (
-                          <div key={lead.id} className="rounded-md border border-slate-200 bg-white p-3" data-testid={`presales-kanban-card-${lead.id}`}>
-                            <p className="text-sm text-slate-900" data-testid={`presales-kanban-card-name-${lead.id}`}>{lead.name}</p>
-                            <p className="text-xs text-slate-500" data-testid={`presales-kanban-card-source-${lead.id}`}>{lead.source_tab || lead.source_type}</p>
-                            <div className="mt-2 flex flex-wrap gap-1">
-                              <Button size="sm" onClick={() => qualifyNow(lead.id)} className="bg-amber-500 text-white hover:bg-amber-600" data-testid={`presales-kanban-qualify-${lead.id}`}>Qualify</Button>
-                              <select value={assignBranchSelection[lead.id] || ""} onChange={(e) => setAssignBranchSelection((p) => ({ ...p, [lead.id]: e.target.value }))} className="h-8 rounded border border-slate-200 px-1 text-xs" data-testid={`presales-kanban-branch-select-${lead.id}`}>
-                                <option value="">Branch</option>
-                                {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.branch_name}</option>)}
-                              </select>
-                              <Button size="sm" onClick={() => assignBranchNow(lead.id)} className="bg-violet-500 text-white hover:bg-violet-600" data-testid={`presales-kanban-assign-${lead.id}`}>Assign</Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="overflow-auto rounded-lg border border-slate-200" data-testid="presales-list-table-wrap">
-                  <table className="min-w-full text-sm">
-                    <thead className="bg-slate-50 text-left text-slate-600">
-                      <tr>
-                        <th className="px-3 py-2">Lead</th>
-                        <th className="px-3 py-2">Source</th>
-                        <th className="px-3 py-2">Stage</th>
-                        <th className="px-3 py-2">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {preSalesLeads.map((lead) => (
-                        <tr key={lead.id} className="border-t border-slate-100" data-testid={`presales-list-row-${lead.id}`}>
-                          <td className="px-3 py-2" data-testid={`presales-list-name-${lead.id}`}>{lead.name} · {lead.phone}</td>
-                          <td className="px-3 py-2" data-testid={`presales-list-source-${lead.id}`}>{lead.source_tab || lead.source_type}</td>
-                          <td className="px-3 py-2" data-testid={`presales-list-stage-${lead.id}`}>{lead.stage}</td>
-                          <td className="px-3 py-2">
-                            <div className="flex flex-wrap gap-1">
-                              <Button size="sm" onClick={() => qualifyNow(lead.id)} className="bg-amber-500 text-white hover:bg-amber-600" data-testid={`presales-list-qualify-${lead.id}`}>Qualify</Button>
-                              <select value={assignBranchSelection[lead.id] || ""} onChange={(e) => setAssignBranchSelection((p) => ({ ...p, [lead.id]: e.target.value }))} className="h-8 rounded border border-slate-200 px-1 text-xs" data-testid={`presales-list-branch-select-${lead.id}`}>
-                                <option value="">Branch</option>
-                                {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.branch_name}</option>)}
-                              </select>
-                              <Button size="sm" onClick={() => assignBranchNow(lead.id)} className="bg-violet-500 text-white hover:bg-violet-600" data-testid={`presales-list-assign-${lead.id}`}>Assign</Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <PreSalesBoard />
         )}
 
         {(showSuperAdminBoard) && (
