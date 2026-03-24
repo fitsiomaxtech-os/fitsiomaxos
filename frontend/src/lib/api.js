@@ -91,3 +91,4 @@ export const addLeadFollowUp = async (leadId, payload) => (await api.post(`/lead
 export const completeLeadFollowUp = async (leadId, followupId) => (await api.post(`/leads/${leadId}/follow-ups/${followupId}/complete`)).data;
 export const getLeadActivity = async (leadId) => (await api.get(`/leads/${leadId}/activity`)).data;
 export const moveLeadStage = async (leadId, payload) => (await api.post(`/leads/${leadId}/move-stage`, payload)).data;
+export const bookAppointment = async (leadId, payload) => (await api.post(`/leads/${leadId}/book-appointment`, payload)).data;

@@ -24,8 +24,11 @@ import {
   addLeadFollowUp,
   addLeadRemark,
   assignLeadBranch,
+  bookAppointment,
   completeLeadFollowUp,
   createManualLead,
+  getAvailableDoctors,
+  getDoctors,
   getLeadActivity,
   getLeadFollowUps,
   getLeadRemarks,
@@ -33,7 +36,6 @@ import {
   getBranches,
   getMasterBoard,
   moveLeadStage,
-  qualifyLead,
   updateLead,
 } from "@/lib/api";
 
@@ -76,7 +78,6 @@ export const PreSalesBoard = () => {
   const [newLeadForm, setNewLeadForm] = useState(defaultNewLead);
 
   const [selectedLead, setSelectedLead] = useState(null);
-  const [assignBranchSelection, setAssignBranchSelection] = useState({});
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -128,28 +129,6 @@ export const PreSalesBoard = () => {
       await loadData();
     } catch (err) {
       toast.error(err?.response?.data?.detail || "Create failed");
-    }
-  };
-
-  const qualifyNow = async (leadId) => {
-    try {
-      await qualifyLead(leadId);
-      toast.success("Lead qualified");
-      await loadData();
-    } catch (err) {
-      toast.error(err?.response?.data?.detail || "Qualify failed");
-    }
-  };
-
-  const assignBranchNow = async (leadId) => {
-    const branchId = assignBranchSelection[leadId];
-    if (!branchId) { toast.error("Select branch first"); return; }
-    try {
-      await assignLeadBranch(leadId, { branch_id: branchId });
-      toast.success("Assigned to branch");
-      await loadData();
-    } catch (err) {
-      toast.error(err?.response?.data?.detail || "Assign failed");
     }
   };
 
@@ -401,10 +380,6 @@ export const PreSalesBoard = () => {
           onClose={closeLeadDetail}
           onStageMove={handleStageMove}
           onRefresh={loadData}
-          assignBranchSelection={assignBranchSelection}
-          setAssignBranchSelection={setAssignBranchSelection}
-          qualifyNow={qualifyNow}
-          assignBranchNow={assignBranchNow}
         />
       )}
 
@@ -425,10 +400,20 @@ function ModalOverlay({ children, onClose }) {
 }
 
 /* ─── Lead Detail Modal ─── */
-function LeadDetailModal({ lead, branches, onClose, onStageMove, onRefresh, assignBranchSelection, setAssignBranchSelection, qualifyNow, assignBranchNow }) {
+function LeadDetailModal({ lead, branches, onClose, onStageMove, onRefresh }) {
   const [activeTab, setActiveTab] = useState("overview");
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", phone: "", email: "", notes: "", extra_fields: {} });
+
+  const [showBranchPicker, setShowBranchPicker] = useState(false);
+  const [showBookingFlow, setShowBookingFlow] = useState(false);
+  const [selectedBranchId, setSelectedBranchId] = useState("");
+
+  const [doctors, setDoctors] = useState([]);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedSlot, setSelectedSlot] = useState("");
+  const [selectedDoctorId, setSelectedDoctorId] = useState("");
+  const [bookedSlots, setBookedSlots] = useState(new Set());
 
   const [remarks, setRemarks] = useState([]);
   const [newRemark, setNewRemark] = useState("");
@@ -506,6 +491,80 @@ function LeadDetailModal({ lead, branches, onClose, onStageMove, onRefresh, assi
     } catch (err) {
       toast.error(err?.response?.data?.detail || "Failed");
     }
+  };
+
+  const handleStageClick = (stage) => {
+    if (stage === "Assigned to Branch") {
+      setShowBranchPicker(true);
+      setShowBookingFlow(false);
+      return;
+    }
+    if (stage === "Appointment Booked") {
+      setShowBookingFlow(true);
+      setShowBranchPicker(false);
+      loadDoctorsForBranch(lead.branch_id);
+      return;
+    }
+    onStageMove(lead.id, stage);
+    setShowBranchPicker(false);
+    setShowBookingFlow(false);
+  };
+
+  const assignBranchAndMove = async () => {
+    if (!selectedBranchId) { toast.error("Select a branch"); return; }
+    try {
+      await assignLeadBranch(lead.id, { branch_id: selectedBranchId });
+      toast.success("Assigned to branch");
+      setShowBranchPicker(false);
+      setSelectedBranchId("");
+      await onRefresh();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Assign failed");
+    }
+  };
+
+  const loadDoctorsForBranch = async (branchId) => {
+    if (!branchId) { setDoctors([]); return; }
+    try {
+      const data = await getDoctors({ branch_id: branchId });
+      setDoctors(data);
+    } catch { setDoctors([]); }
+  };
+
+  const checkSlotAvailability = async (doctorId, slot) => {
+    if (!lead.branch_id) return;
+    try {
+      const res = await getAvailableDoctors({ branch_id: lead.branch_id, slot_time: slot });
+      const availIds = new Set((res.available_doctors || []).map((d) => d.id));
+      return availIds.has(doctorId);
+    } catch { return false; }
+  };
+
+  const bookNow = async () => {
+    if (!selectedDoctorId || !selectedSlot) { toast.error("Select a doctor and time slot"); return; }
+    try {
+      await bookAppointment(lead.id, { doctor_id: selectedDoctorId, slot_time: selectedSlot });
+      toast.success("Appointment booked!");
+      setShowBookingFlow(false);
+      setSelectedDoctorId("");
+      setSelectedSlot("");
+      setSelectedDate("");
+      await onRefresh();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Booking failed");
+    }
+  };
+
+  const generateTimeSlots = () => {
+    if (!selectedDate) return [];
+    const slots = [];
+    for (let h = 8; h <= 20; h++) {
+      for (let m = 0; m < 60; m += 30) {
+        const time = `${selectedDate}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+        slots.push(time);
+      }
+    }
+    return slots;
   };
 
   const TABS = [
@@ -647,7 +706,7 @@ function LeadDetailModal({ lead, branches, onClose, onStageMove, onRefresh, assi
                         key={stage}
                         type="button"
                         disabled={isActive}
-                        onClick={() => onStageMove(lead.id, stage)}
+                        onClick={() => handleStageClick(stage)}
                         className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
                           isActive
                             ? `${color?.bg || "bg-slate-500"} border-transparent text-white`
@@ -656,11 +715,148 @@ function LeadDetailModal({ lead, branches, onClose, onStageMove, onRefresh, assi
                         data-testid={`lead-detail-stage-btn-${stage}`}
                       >
                         {stage}
-                        {stage === "Appointment Booked" && <ChevronRight className="h-3 w-3" />}
+                        {(stage === "Assigned to Branch" || stage === "Appointment Booked") && !isActive && <ChevronRight className="h-3 w-3" />}
                       </button>
                     );
                   })}
                 </div>
+
+                {/* Branch Picker Popup */}
+                {showBranchPicker && (
+                  <div className="mt-3 rounded-lg border border-violet-200 bg-violet-50/50 p-4" data-testid="branch-picker-popup">
+                    <p className="mb-2 text-xs font-semibold text-violet-700">Select Branch to Assign</p>
+                    <div className="max-h-40 space-y-1.5 overflow-y-auto">
+                      {branches.length === 0 ? (
+                        <p className="text-xs text-slate-400">No branches available</p>
+                      ) : (
+                        branches.map((b) => (
+                          <label
+                            key={b.id}
+                            className={`flex cursor-pointer items-center gap-2 rounded-md border p-2.5 transition-colors ${
+                              selectedBranchId === b.id ? "border-violet-400 bg-violet-100" : "border-slate-200 bg-white hover:bg-slate-50"
+                            }`}
+                            data-testid={`branch-picker-option-${b.id}`}
+                          >
+                            <input
+                              type="radio"
+                              name="branch_pick"
+                              value={b.id}
+                              checked={selectedBranchId === b.id}
+                              onChange={() => setSelectedBranchId(b.id)}
+                              className="accent-violet-600"
+                            />
+                            <div>
+                              <p className="text-sm font-medium text-slate-800">{b.branch_name}</p>
+                              <p className="text-[10px] text-slate-400">{b.address}</p>
+                            </div>
+                          </label>
+                        ))
+                      )}
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <Button size="sm" onClick={assignBranchAndMove} className="bg-violet-600 text-white hover:bg-violet-700" data-testid="branch-picker-assign-btn">Assign to Branch</Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowBranchPicker(false)} data-testid="branch-picker-cancel-btn">Cancel</Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Appointment Booking Flow */}
+                {showBookingFlow && (
+                  <div className="mt-3 rounded-lg border border-green-200 bg-green-50/50 p-4" data-testid="booking-flow-popup">
+                    <p className="mb-2 text-xs font-semibold text-green-700">Book Appointment</p>
+                    {!lead.branch_id ? (
+                      <p className="text-xs text-red-500">Lead must be assigned to a branch first</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {/* Date Picker */}
+                        <div>
+                          <label className="text-[10px] font-medium text-slate-500">Select Date</label>
+                          <Input type="date" value={selectedDate} onChange={(e) => { setSelectedDate(e.target.value); setSelectedSlot(""); setSelectedDoctorId(""); }} data-testid="booking-date-picker" />
+                        </div>
+
+                        {/* Time Slots Grid */}
+                        {selectedDate && (
+                          <div>
+                            <label className="text-[10px] font-medium text-slate-500">Select Time Slot</label>
+                            <div className="mt-1 grid grid-cols-4 gap-1" data-testid="booking-time-slots">
+                              {generateTimeSlots().map((slot) => {
+                                const timeStr = slot.slice(11, 16);
+                                const isSelected = selectedSlot === slot;
+                                return (
+                                  <button
+                                    key={slot}
+                                    type="button"
+                                    onClick={() => setSelectedSlot(slot)}
+                                    className={`rounded-md border px-2 py-1.5 text-[11px] font-medium transition-colors ${
+                                      isSelected ? "border-green-500 bg-green-100 text-green-800" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                    }`}
+                                    data-testid={`booking-slot-${timeStr}`}
+                                  >
+                                    {timeStr}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Doctor Selection */}
+                        {selectedSlot && (
+                          <div>
+                            <label className="text-[10px] font-medium text-slate-500">Select Head Physio / Doctor</label>
+                            <div className="mt-1 space-y-1.5" data-testid="booking-doctor-list">
+                              {doctors.length === 0 ? (
+                                <p className="text-xs text-slate-400">No doctors in this branch</p>
+                              ) : (
+                                doctors.map((doc) => {
+                                  // Normalize slot comparison - remove seconds if present
+                                  const normalizedSlot = selectedSlot?.slice(0, 16) || "";
+                                  const hasSlot = (doc.slots || []).some(s => s.slice(0, 16) === normalizedSlot);
+                                  const isSelected = selectedDoctorId === doc.id;
+                                  return (
+                                    <button
+                                      key={doc.id}
+                                      type="button"
+                                      onClick={() => hasSlot && setSelectedDoctorId(doc.id)}
+                                      disabled={!hasSlot}
+                                      className={`flex w-full items-center gap-3 rounded-md border p-2.5 text-left transition-all ${
+                                        !hasSlot
+                                          ? "cursor-not-allowed border-slate-100 bg-slate-50 opacity-40"
+                                          : isSelected
+                                          ? "border-green-400 bg-green-50 shadow-sm"
+                                          : "border-slate-200 bg-white hover:bg-slate-50"
+                                      }`}
+                                      data-testid={`booking-doctor-${doc.id}`}
+                                    >
+                                      <div className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${hasSlot ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-400"}`}>
+                                        {doc.full_name?.charAt(0)?.toUpperCase() || "D"}
+                                      </div>
+                                      <div className="flex-1">
+                                        <p className={`text-sm font-medium ${hasSlot ? "text-slate-800" : "text-slate-400"}`}>{doc.full_name}</p>
+                                        <p className="text-[10px] text-slate-400">{doc.specialization || "Physiotherapist"}</p>
+                                      </div>
+                                      {hasSlot ? (
+                                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700">Available</span>
+                                      ) : (
+                                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-400">Unavailable</span>
+                                      )}
+                                    </button>
+                                  );
+                                })
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Book Button */}
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={bookNow} disabled={!selectedDoctorId || !selectedSlot} className="bg-green-600 text-white hover:bg-green-700" data-testid="booking-confirm-btn">Book Appointment</Button>
+                          <Button size="sm" variant="outline" onClick={() => setShowBookingFlow(false)} data-testid="booking-cancel-btn">Cancel</Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </>
           )}

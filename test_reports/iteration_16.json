@@ -1,0 +1,101 @@
+{
+  "summary": "Completed comprehensive testing of Pre-sales Board iteration 16 features: Branch picker popup, Appointment booking flow (Calendly-style), full-width sticky white header, and JSON preview removal. Fixed 2 bugs: 1) Backend permission issue - pre_sales role was missing from book-appointment endpoint, 2) Frontend slot comparison bug - time slots had seconds but doctor slots didn't.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_presales_iteration16.py",
+    "/app/test_reports/pytest/pytest_results_iteration16.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "All features working correctly after fixes",
+    "Branch picker popup shows radio-selectable branches with Assign/Cancel buttons",
+    "Booking flow shows date picker -> time slots grid (08:00-20:30 in 30-min intervals) -> doctor list with Available/Unavailable status",
+    "Unavailable doctors correctly shown with low opacity (0.4)",
+    "Header is full-width, white background, sticky, with FitsiomaxOS brand and blue text",
+    "JSON preview card correctly hidden for pre_sales role"
+  ],
+  "updated_files": [
+    "/app/backend/server.py (line 2067: added pre_sales to book-appointment endpoint roles)",
+    "/app/frontend/src/components/PreSalesBoard.jsx (line 558: removed seconds from slot generation, line 811: normalized slot comparison)"
+  ],
+  "success_rate": {
+    "backend": "100% (16/16 tests passed)",
+    "frontend": "100% (All UI tests passed)"
+  },
+  "seed_data_creation": "Created TEST_Iteration16_Lead and TEST_Branch_Assign_* leads during testing",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Pre-sales Board iteration 16 fully tested on https://bizdev-dashboard.preview.emergentagent.com. Login: presales@fitsiomax.com / presales123 (demo dropdown index 3). Features verified: 1) Branch picker popup - clicking 'Assigned to Branch' stage button opens popup with radio-selectable branches, Assign/Cancel buttons work. 2) Booking flow - clicking 'Appointment Booked' opens Calendly-style flow: date picker -> time slots grid (08:00-20:30 in 30-min intervals) -> doctor list with Available/Unavailable status (unavailable shown with 0.4 opacity). 3) Header - full-width, white background (rgb(255,255,255)), sticky position, FitsiomaxOS brand, blue text, Hi greeting. 4) JSON preview card NOT visible for pre_sales role. Backend APIs tested: POST /api/v3/leads/{id}/move-stage, POST /api/v3/leads/{id}/assign-branch, POST /api/v3/leads/{id}/book-appointment, GET /api/v3/doctors, GET /api/v3/doctors/available. Two bugs were fixed: backend permission (pre_sales added to book-appointment), frontend slot comparison (normalized to 16 chars).",
+  "features_tested": {
+    "login": "Pre-sales user login via demo dropdown (index 3) works correctly",
+    "header": {
+      "full_width": true,
+      "white_background": "rgb(255, 255, 255)",
+      "sticky": true,
+      "brand_text": "FitsiomaxOS",
+      "title": "Pre-sales Master View",
+      "greeting": "Hi Pre"
+    },
+    "json_preview_hidden": true,
+    "kanban_view": "3 columns: New Lead, Pre-sales Qualified, Assigned to Branch",
+    "branch_picker_popup": {
+      "trigger": "Clicking 'Assigned to Branch' stage button",
+      "radio_selectable_branches": true,
+      "assign_button": true,
+      "cancel_button": true,
+      "branches_count": 20
+    },
+    "booking_flow": {
+      "trigger": "Clicking 'Appointment Booked' stage button",
+      "date_picker": true,
+      "time_slots_grid": "08:00-20:30 in 30-min intervals",
+      "doctor_list": true,
+      "available_status": "Full opacity (1)",
+      "unavailable_status": "Low opacity (0.4)",
+      "book_appointment_button": true,
+      "cancel_button": true,
+      "booking_success": "Appointment booked! toast shown"
+    }
+  },
+  "backend_apis_tested": {
+    "POST /api/v3/auth/login": "Works - returns token and user",
+    "GET /api/v3/branches": "Works - returns 20 branches",
+    "GET /api/v3/leads": "Works - returns leads list",
+    "POST /api/v3/leads/manual": "Works - creates new lead",
+    "POST /api/v3/leads/{id}/move-stage": "Works - moves lead stage and creates activity",
+    "POST /api/v3/leads/{id}/assign-branch": "Works - assigns branch and updates stage to 'Assigned to Branch'",
+    "GET /api/v3/doctors": "Works - returns doctors list with slots",
+    "GET /api/v3/doctors?branch_id=X": "Works - returns filtered doctors",
+    "GET /api/v3/doctors/available": "Works - returns available doctors for slot",
+    "POST /api/v3/leads/{id}/book-appointment": "Works - creates appointment and updates stage to 'Appointment Booked'",
+    "GET /api/v3/boards/master": "Works - returns stage counts",
+    "GET /api/v3/leads/{id}/activity": "Works - returns activity log",
+    "GET /api/v3/leads/{id}/remarks": "Works - returns remarks",
+    "GET /api/v3/leads/{id}/follow-ups": "Works - returns follow-ups"
+  },
+  "bugs_fixed": [
+    {
+      "type": "Backend permission",
+      "file": "/app/backend/server.py",
+      "line": 2067,
+      "issue": "pre_sales role was missing from v3_book_appointment endpoint allowed roles",
+      "fix": "Added 'pre_sales' to v3_require_roles decorator"
+    },
+    {
+      "type": "Frontend slot comparison",
+      "file": "/app/frontend/src/components/PreSalesBoard.jsx",
+      "lines": "558, 811",
+      "issue": "Time slots generated with seconds (:00) but doctor slots stored without seconds, causing all doctors to show as unavailable",
+      "fix": "Removed seconds from slot generation and normalized slot comparison to 16 characters"
+    }
+  ],
+  "mocked_api_status": "No mocked APIs - all endpoints are live"
+}

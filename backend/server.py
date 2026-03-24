@@ -2064,7 +2064,7 @@ async def v3_confirm_lead(lead_id: str, user: V3UserOut = Depends(v3_require_rol
 
 
 @v3_router.post("/leads/{lead_id}/book-appointment", response_model=V3AppointmentOut)
-async def v3_book_appointment(lead_id: str, payload: V3BookAppointmentInput, user: V3UserOut = Depends(v3_require_roles("branch_admin", "head_physio", "super_admin"))):
+async def v3_book_appointment(lead_id: str, payload: V3BookAppointmentInput, user: V3UserOut = Depends(v3_require_roles("pre_sales", "branch_admin", "head_physio", "super_admin"))):
     lead = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
