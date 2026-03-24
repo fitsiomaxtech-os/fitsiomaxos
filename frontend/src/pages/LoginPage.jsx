@@ -8,9 +8,19 @@ import { toast } from "@/components/ui/sonner";
 const BG_IMAGE =
   "https://images.pexels.com/photos/62693/pexels-photo-62693.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940";
 
+const DEMO_USERS = [
+  { label: "Super Admin", email: "admin@fitsiomax.com", password: "admin123" },
+  { label: "Business Dev", email: "businessdev@fitsiomax.com", password: "bd123" },
+  { label: "Pre-sales", email: "presales@fitsiomax.com", password: "presales123" },
+  { label: "Branch Admin", email: "branchadmin@fitsiomax.com", password: "branch123" },
+  { label: "Head Physio", email: "headphysio@fitsiomax.com", password: "head123" },
+  { label: "Physio", email: "physio@fitsiomax.com", password: "physio123" },
+];
+
 export const LoginPage = ({ onLogin }) => {
   const [email, setEmail] = useState("admin@fitsiomax.com");
   const [password, setPassword] = useState("admin123");
+  const [selectedDemo, setSelectedDemo] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (event) => {
@@ -22,6 +32,27 @@ export const LoginPage = ({ onLogin }) => {
       toast.success("Login successful");
     } catch (error) {
       toast.error(error?.response?.data?.detail || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loginWithDemoUser = async (demoValue) => {
+    const demo = DEMO_USERS.find((item) => item.email === demoValue);
+    if (!demo) {
+      return;
+    }
+    setSelectedDemo(demoValue);
+    setEmail(demo.email);
+    setPassword(demo.password);
+    setLoading(true);
+
+    try {
+      const data = await apiLogin(demo.email, demo.password);
+      onLogin(data);
+      toast.success(`Logged in as ${demo.label}`);
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || "Demo login failed");
     } finally {
       setLoading(false);
     }
@@ -60,6 +91,25 @@ export const LoginPage = ({ onLogin }) => {
 
           <CardContent>
             <form className="space-y-4" onSubmit={handleSubmit} data-testid="screen1-login-form">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700" data-testid="screen1-demo-dropdown-label">
+                  Demo User Login
+                </label>
+                <select
+                  value={selectedDemo}
+                  onChange={(event) => loginWithDemoUser(event.target.value)}
+                  className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700"
+                  data-testid="screen1-demo-user-dropdown"
+                >
+                  <option value="">Select demo user (auto login)</option>
+                  {DEMO_USERS.map((demo) => (
+                    <option key={demo.email} value={demo.email}>
+                      {demo.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700" data-testid="screen1-login-email-label">
                   Email
