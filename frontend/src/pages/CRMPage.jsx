@@ -40,6 +40,7 @@ import {
   qualifyLead,
   saveSheetMapping,
   syncSheetConnection,
+  updateLead,
 } from "@/lib/api";
 import { toast, Toaster } from "@/components/ui/sonner";
 
@@ -163,6 +164,9 @@ const defaultSyncPayload = `{
   ]
 }`;
 
+const LOGO_URL =
+  "https://customer-assets.emergentagent.com/job_therapy-crm-board/artifacts/u4bafq34_Fitsiomax-logo.webp";
+
 export const CRMPage = ({ auth, onLogout }) => {
   const [masterBoard, setMasterBoard] = useState({ stage_counts: {} });
   const [branchBoard, setBranchBoard] = useState({ stage_counts: {} });
@@ -193,11 +197,29 @@ export const CRMPage = ({ auth, onLogout }) => {
 
   const [leadStageFilter, setLeadStageFilter] = useState("");
   const [leadBranchFilter, setLeadBranchFilter] = useState("");
+  const [leadDateFrom, setLeadDateFrom] = useState("");
+  const [leadDateTo, setLeadDateTo] = useState("");
   const [appointmentFilter, setAppointmentFilter] = useState("all");
+
+  const [customFieldName, setCustomFieldName] = useState("");
+  const [customFieldType, setCustomFieldType] = useState("text");
+  const [customFieldOptions, setCustomFieldOptions] = useState("");
+  const [customFieldDefs, setCustomFieldDefs] = useState([]);
+
+  const [editingLeadId, setEditingLeadId] = useState("");
+  const [leadEditForm, setLeadEditForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    notes: "",
+    extra_fields: {},
+  });
+
   const [loading, setLoading] = useState(false);
 
   const role = auth.user.role;
   const roleLabel = ROLE_META[role]?.label || role;
+  const boardTitle = role === "pre_sales" ? "Pre - sale s Board" : `${roleLabel} Board`;
 
   const [preSalesStageTab, setPreSalesStageTab] = useState("All");
   const [preSalesViewType, setPreSalesViewType] = useState("kanban");
@@ -222,6 +244,8 @@ export const CRMPage = ({ auth, onLogout }) => {
           getLeads({
             stage: leadStageFilter || undefined,
             branch_id: leadBranchFilter || undefined,
+            start_date: leadDateFrom ? `${leadDateFrom}T00:00:00` : undefined,
+            end_date: leadDateTo ? `${leadDateTo}T23:59:59` : undefined,
           }),
         []),
         safeCall(() => getDoctors({}), []),
@@ -251,7 +275,24 @@ export const CRMPage = ({ auth, onLogout }) => {
 
   useEffect(() => {
     loadEverything();
-  }, [leadStageFilter, leadBranchFilter, appointmentFilter]);
+  }, [leadStageFilter, leadBranchFilter, leadDateFrom, leadDateTo, appointmentFilter]);
+
+  useEffect(() => {
+    if (!editingLeadId) {
+      return;
+    }
+    const selected = leads.find((lead) => lead.id === editingLeadId);
+    if (!selected) {
+      return;
+    }
+    setLeadEditForm({
+      name: selected.name || "",
+      phone: selected.phone || "",
+      email: selected.email || "",
+      notes: selected.notes || "",
+      extra_fields: selected.extra_fields || {},
+    });
+  }, [editingLeadId, leads]);
 
   const logout = async () => {
     try {
@@ -453,6 +494,56 @@ export const CRMPage = ({ auth, onLogout }) => {
     }
   };
 
+  const addCustomFieldDef = () => {
+    const cleanName = customFieldName.trim();
+    if (!cleanName) {
+      toast.error("Custom field name required");
+      return;
+    }
+    if (customFieldDefs.some((item) => item.name.toLowerCase() === cleanName.toLowerCase())) {
+      toast.error("Custom field already exists");
+      return;
+    }
+
+    setCustomFieldDefs((prev) => [
+      ...prev,
+      {
+        name: cleanName,
+        type: customFieldType,
+        options:
+          customFieldType === "select"
+            ? customFieldOptions
+                .split(",")
+                .map((item) => item.trim())
+                .filter(Boolean)
+            : [],
+      },
+    ]);
+    setCustomFieldName("");
+    setCustomFieldOptions("");
+    toast.success("Custom field added");
+  };
+
+  const saveLeadEdit = async () => {
+    if (!editingLeadId) {
+      toast.error("Select lead to edit");
+      return;
+    }
+    try {
+      await updateLead(editingLeadId, {
+        name: leadEditForm.name,
+        phone: leadEditForm.phone,
+        email: leadEditForm.email,
+        notes: leadEditForm.notes,
+        extra_fields: leadEditForm.extra_fields,
+      });
+      toast.success("Lead updated");
+      await loadEverything();
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || "Lead update failed");
+    }
+  };
+
   const showSuperAdminBoard = role === "super_admin";
   const showBusinessDevBoard = role === "business_dev";
   const showPreSalesBoard = role === "pre_sales";
@@ -496,18 +587,22 @@ export const CRMPage = ({ auth, onLogout }) => {
       <div className="w-full space-y-6" data-testid="role-board-full-width-wrap">
         <header className="sticky top-0 z-20 rounded-xl border border-slate-200 bg-white p-5 shadow-sm" data-testid="role-board-header">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.14em] text-sky-600" data-testid="role-board-brand-subtitle">
-                FITSIOMAX OS
-              </p>
-              <h1 className="font-heading text-4xl text-slate-900" data-testid="role-board-title">
-                {roleLabel} Board
-              </h1>
-              <p className="text-sm text-slate-600" data-testid="role-board-user-info">
-                {auth.user.full_name} · {auth.user.email}
-              </p>
+            <div className="flex items-center gap-3">
+              <img src={LOGO_URL} alt="Fitsiomax" className="h-12 w-12 rounded-md object-contain" data-testid="header-left-logo" />
+              <div>
+                <p className="text-xs uppercase tracking-[0.14em] text-sky-600" data-testid="role-board-brand-subtitle">
+                  FITSIOMAX OS
+                </p>
+                <h1 className="font-heading text-4xl text-slate-900" data-testid="role-board-title">
+                  {boardTitle}
+                </h1>
+                <p className="text-sm text-slate-600" data-testid="role-board-user-info">
+                  {auth.user.full_name} · {auth.user.email}
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
+              <img src={LOGO_URL} alt="Fitsiomax" className="h-9 w-9 rounded-md object-contain" data-testid="header-right-logo" />
               <Button
                 variant="outline"
                 className="border-slate-200 bg-white"
@@ -547,7 +642,7 @@ export const CRMPage = ({ auth, onLogout }) => {
             <CardHeader>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <CardTitle className="text-base" data-testid="presales-main-board-title">
-                  Pre-sales Pipeline Board
+                  Pre - sale s Board
                 </CardTitle>
                 <div className="flex items-center gap-2">
                   <Button
@@ -570,6 +665,58 @@ export const CRMPage = ({ auth, onLogout }) => {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="grid gap-2 md:grid-cols-3" data-testid="presales-date-filter-row">
+                <Input type="date" value={leadDateFrom} onChange={(e) => setLeadDateFrom(e.target.value)} data-testid="presales-date-from-input" />
+                <Input type="date" value={leadDateTo} onChange={(e) => setLeadDateTo(e.target.value)} data-testid="presales-date-to-input" />
+                <Button variant="outline" onClick={() => { setLeadDateFrom(""); setLeadDateTo(""); }} data-testid="presales-date-clear-button">Clear Date Filter</Button>
+              </div>
+
+              <div className="grid gap-2 md:grid-cols-4" data-testid="presales-custom-field-builder">
+                <Input value={customFieldName} onChange={(e) => setCustomFieldName(e.target.value)} placeholder="Custom field name" data-testid="presales-custom-field-name-input" />
+                <select value={customFieldType} onChange={(e) => setCustomFieldType(e.target.value)} className="h-9 rounded-md border border-slate-200 px-3 text-sm" data-testid="presales-custom-field-type-select">
+                  <option value="text">Text</option>
+                  <option value="number">Number</option>
+                  <option value="date">Date</option>
+                  <option value="select">Select</option>
+                </select>
+                <Input value={customFieldOptions} onChange={(e) => setCustomFieldOptions(e.target.value)} placeholder="Options (comma separated)" data-testid="presales-custom-field-options-input" />
+                <Button onClick={addCustomFieldDef} data-testid="presales-custom-field-add-button">Add Custom Field</Button>
+              </div>
+
+              <div className="grid gap-2 md:grid-cols-2" data-testid="presales-lead-edit-panel">
+                <select value={editingLeadId} onChange={(e) => setEditingLeadId(e.target.value)} className="h-9 rounded-md border border-slate-200 px-3 text-sm" data-testid="presales-edit-lead-select">
+                  <option value="">Select lead to edit</option>
+                  {preSalesLeads.map((lead) => <option key={lead.id} value={lead.id}>{lead.name} · {lead.phone}</option>)}
+                </select>
+                <div />
+                <Input value={leadEditForm.name} onChange={(e) => setLeadEditForm((p) => ({ ...p, name: e.target.value }))} placeholder="Name" data-testid="presales-edit-name-input" />
+                <Input value={leadEditForm.phone} onChange={(e) => setLeadEditForm((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" data-testid="presales-edit-phone-input" />
+                <Input value={leadEditForm.email} onChange={(e) => setLeadEditForm((p) => ({ ...p, email: e.target.value }))} placeholder="Email" data-testid="presales-edit-email-input" />
+                <Input value={leadEditForm.notes} onChange={(e) => setLeadEditForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Notes" data-testid="presales-edit-notes-input" />
+
+                {customFieldDefs.map((field) => (
+                  <div key={field.name} className="md:col-span-1">
+                    {field.type === "select" ? (
+                      <select value={leadEditForm.extra_fields?.[field.name] || ""} onChange={(e) => setLeadEditForm((p) => ({ ...p, extra_fields: { ...p.extra_fields, [field.name]: e.target.value } }))} className="h-9 w-full rounded-md border border-slate-200 px-3 text-sm" data-testid={`presales-edit-custom-${field.name}`}>
+                        <option value="">{field.name}</option>
+                        {field.options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                      </select>
+                    ) : (
+                      <Input
+                        type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
+                        value={leadEditForm.extra_fields?.[field.name] || ""}
+                        onChange={(e) => setLeadEditForm((p) => ({ ...p, extra_fields: { ...p.extra_fields, [field.name]: e.target.value } }))}
+                        placeholder={field.name}
+                        data-testid={`presales-edit-custom-${field.name}`}
+                      />
+                    )}
+                  </div>
+                ))}
+                <div className="md:col-span-2">
+                  <Button onClick={saveLeadEdit} variant="outline" data-testid="presales-edit-save-button">Save Lead Changes</Button>
+                </div>
+              </div>
+
               <div className="flex flex-wrap gap-2" data-testid="presales-stage-tabs-row">
                 <button
                   type="button"

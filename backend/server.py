@@ -1577,6 +1577,18 @@ class V3LeadCreate(BaseModel):
     extra_fields: Optional[Dict[str, str]] = None
 
 
+class V3LeadUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    vertical: Optional[str] = None
+    source_tab: Optional[str] = None
+    notes: Optional[str] = None
+    stage: Optional[str] = None
+    branch_id: Optional[str] = None
+    extra_fields: Optional[Dict[str, str]] = None
+
+
 class V3LeadOut(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -1875,6 +1887,8 @@ async def v3_get_leads(
     stage: Optional[str] = None,
     branch_id: Optional[str] = None,
     source_tab: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     user: V3UserOut = Depends(v3_current_user),
 ):
     query: Dict[str, object] = {}
@@ -1887,6 +1901,14 @@ async def v3_get_leads(
         query["branch_id"] = user.branch_id
     elif branch_id:
         query["branch_id"] = branch_id
+
+    if start_date or end_date:
+        created_query: Dict[str, str] = {}
+        if start_date:
+            created_query["$gte"] = start_date
+        if end_date:
+            created_query["$lte"] = end_date
+        query["created_at"] = created_query
 
     rows = await v3_col("leads").find(query, {"_id": 0}).sort("updated_at", -1).to_list(1000)
     return [V3LeadOut(**row) for row in rows]
@@ -1910,6 +1932,32 @@ async def v3_manual_lead(payload: V3LeadCreate, _: V3UserOut = Depends(v3_requir
         "updated_at": now_iso(),
     }
     await v3_col("leads").insert_one(lead.copy())
+    return V3LeadOut(**lead)
+
+
+@v3_router.put("/leads/{lead_id}", response_model=V3LeadOut)
+async def v3_edit_lead(
+    lead_id: str,
+    payload: V3LeadUpdate,
+    user: V3UserOut = Depends(v3_require_roles("super_admin", "business_dev", "pre_sales", "branch_admin")),
+):
+    updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if not updates:
+        raise HTTPException(status_code=400, detail="No updates provided")
+
+    updates["updated_at"] = now_iso()
+    filter_query: Dict[str, object] = {"id": lead_id}
+    if user.role == "branch_admin" and user.branch_id:
+        filter_query["branch_id"] = user.branch_id
+
+    result = await v3_col("leads").update_one(filter_query, {"$set": updates})
+    if result.matched_count == 0:
+        exists = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0, "id": 1})
+        if not exists:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        raise HTTPException(status_code=403, detail="Lead not in your branch scope")
+
+    lead = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
     return V3LeadOut(**lead)
 
 
