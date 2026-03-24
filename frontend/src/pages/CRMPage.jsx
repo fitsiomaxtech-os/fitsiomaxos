@@ -61,6 +61,45 @@ const PIPELINE_STAGES = [
   "Completed",
 ];
 
+const STAGE_THEME = {
+  "New Lead": {
+    active: "border-blue-300 bg-blue-50 text-blue-700",
+    inactive: "border-blue-200 bg-white text-blue-600",
+    column: "border-blue-200 bg-blue-50",
+    metric: "text-blue-600",
+  },
+  "Pre-sales Qualified": {
+    active: "border-amber-300 bg-amber-50 text-amber-700",
+    inactive: "border-amber-200 bg-white text-amber-700",
+    column: "border-amber-200 bg-amber-50",
+    metric: "text-amber-600",
+  },
+  "Assigned to Branch": {
+    active: "border-violet-300 bg-violet-50 text-violet-700",
+    inactive: "border-violet-200 bg-white text-violet-700",
+    column: "border-violet-200 bg-violet-50",
+    metric: "text-violet-600",
+  },
+  "Branch Confirmed": {
+    active: "border-teal-300 bg-teal-50 text-teal-700",
+    inactive: "border-teal-200 bg-white text-teal-700",
+    column: "border-teal-200 bg-teal-50",
+    metric: "text-teal-600",
+  },
+  "Appointment Booked": {
+    active: "border-green-300 bg-green-50 text-green-700",
+    inactive: "border-green-200 bg-white text-green-700",
+    column: "border-green-200 bg-green-50",
+    metric: "text-green-600",
+  },
+  Completed: {
+    active: "border-emerald-300 bg-emerald-50 text-emerald-700",
+    inactive: "border-emerald-200 bg-white text-emerald-700",
+    column: "border-emerald-200 bg-emerald-50",
+    metric: "text-emerald-600",
+  },
+};
+
 const verticalDefaults = [
   "offline_physiotherapy",
   "online_physiotherapy",
@@ -454,7 +493,7 @@ export const CRMPage = ({ auth, onLogout }) => {
     <div className="min-h-screen bg-white px-4 py-6 md:px-8 md:py-10" data-testid="role-board-page">
       <Toaster richColors position="top-right" />
 
-      <div className="mx-auto max-w-7xl space-y-6">
+      <div className="w-full space-y-6" data-testid="role-board-full-width-wrap">
         <header className="sticky top-0 z-20 rounded-xl border border-slate-200 bg-white p-5 shadow-sm" data-testid="role-board-header">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -545,7 +584,7 @@ export const CRMPage = ({ auth, onLogout }) => {
                     key={stage}
                     type="button"
                     onClick={() => setPreSalesStageTab(stage)}
-                    className={`rounded-md border px-3 py-2 text-xs ${preSalesStageTab === stage ? "border-sky-500 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-600"}`}
+                    className={`rounded-md border px-3 py-2 text-xs ${preSalesStageTab === stage ? STAGE_THEME[stage]?.active || "border-sky-500 bg-sky-50 text-sky-700" : STAGE_THEME[stage]?.inactive || "border-slate-200 bg-white text-slate-600"}`}
                     data-testid={`presales-stage-tab-${stage}`}
                   >
                     {stage}
@@ -556,7 +595,7 @@ export const CRMPage = ({ auth, onLogout }) => {
               {preSalesViewType === "kanban" ? (
                 <div className="flex gap-3 overflow-x-auto pb-2" data-testid="presales-kanban-board">
                   {preSalesKanbanStages.map((stage) => (
-                    <div key={stage} className="min-w-[280px] rounded-lg border border-slate-200 bg-slate-50 p-3" data-testid={`presales-kanban-column-${stage}`}>
+                    <div key={stage} className={`min-w-[280px] rounded-lg border p-3 ${STAGE_THEME[stage]?.column || "border-slate-200 bg-slate-50"}`} data-testid={`presales-kanban-column-${stage}`}>
                       <p className="mb-2 text-sm font-semibold text-slate-700" data-testid={`presales-kanban-column-title-${stage}`}>
                         {stage}
                       </p>
@@ -566,12 +605,12 @@ export const CRMPage = ({ auth, onLogout }) => {
                             <p className="text-sm text-slate-900" data-testid={`presales-kanban-card-name-${lead.id}`}>{lead.name}</p>
                             <p className="text-xs text-slate-500" data-testid={`presales-kanban-card-source-${lead.id}`}>{lead.source_tab || lead.source_type}</p>
                             <div className="mt-2 flex flex-wrap gap-1">
-                              <Button size="sm" variant="outline" onClick={() => qualifyNow(lead.id)} data-testid={`presales-kanban-qualify-${lead.id}`}>Qualify</Button>
+                              <Button size="sm" onClick={() => qualifyNow(lead.id)} className="bg-amber-500 text-white hover:bg-amber-600" data-testid={`presales-kanban-qualify-${lead.id}`}>Qualify</Button>
                               <select value={assignBranchSelection[lead.id] || ""} onChange={(e) => setAssignBranchSelection((p) => ({ ...p, [lead.id]: e.target.value }))} className="h-8 rounded border border-slate-200 px-1 text-xs" data-testid={`presales-kanban-branch-select-${lead.id}`}>
                                 <option value="">Branch</option>
                                 {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.branch_name}</option>)}
                               </select>
-                              <Button size="sm" variant="outline" onClick={() => assignBranchNow(lead.id)} data-testid={`presales-kanban-assign-${lead.id}`}>Assign</Button>
+                              <Button size="sm" onClick={() => assignBranchNow(lead.id)} className="bg-violet-500 text-white hover:bg-violet-600" data-testid={`presales-kanban-assign-${lead.id}`}>Assign</Button>
                             </div>
                           </div>
                         ))}
@@ -598,12 +637,12 @@ export const CRMPage = ({ auth, onLogout }) => {
                           <td className="px-3 py-2" data-testid={`presales-list-stage-${lead.id}`}>{lead.stage}</td>
                           <td className="px-3 py-2">
                             <div className="flex flex-wrap gap-1">
-                              <Button size="sm" variant="outline" onClick={() => qualifyNow(lead.id)} data-testid={`presales-list-qualify-${lead.id}`}>Qualify</Button>
+                              <Button size="sm" onClick={() => qualifyNow(lead.id)} className="bg-amber-500 text-white hover:bg-amber-600" data-testid={`presales-list-qualify-${lead.id}`}>Qualify</Button>
                               <select value={assignBranchSelection[lead.id] || ""} onChange={(e) => setAssignBranchSelection((p) => ({ ...p, [lead.id]: e.target.value }))} className="h-8 rounded border border-slate-200 px-1 text-xs" data-testid={`presales-list-branch-select-${lead.id}`}>
                                 <option value="">Branch</option>
                                 {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.branch_name}</option>)}
                               </select>
-                              <Button size="sm" variant="outline" onClick={() => assignBranchNow(lead.id)} data-testid={`presales-list-assign-${lead.id}`}>Assign</Button>
+                              <Button size="sm" onClick={() => assignBranchNow(lead.id)} className="bg-violet-500 text-white hover:bg-violet-600" data-testid={`presales-list-assign-${lead.id}`}>Assign</Button>
                             </div>
                           </td>
                         </tr>
@@ -625,9 +664,9 @@ export const CRMPage = ({ auth, onLogout }) => {
             </CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-3">
               {PIPELINE_STAGES.map((stage) => (
-                <div key={stage} className="rounded-md border border-slate-200 bg-slate-50 p-3" data-testid={`top-board-stage-${stage}`}>
+                <div key={stage} className={`rounded-md border p-3 ${STAGE_THEME[stage]?.column || "border-slate-200 bg-slate-50"}`} data-testid={`top-board-stage-${stage}`}>
                   <p className="text-xs text-slate-500" data-testid={`top-board-stage-label-${stage}`}>{stage}</p>
-                  <p className="text-2xl font-semibold text-sky-600" data-testid={`top-board-stage-value-${stage}`}>
+                  <p className={`text-2xl font-semibold ${STAGE_THEME[stage]?.metric || "text-sky-600"}`} data-testid={`top-board-stage-value-${stage}`}>
                     {masterBoard.stage_counts?.[stage] || 0}
                   </p>
                 </div>
@@ -770,7 +809,7 @@ export const CRMPage = ({ auth, onLogout }) => {
                         <td className="px-3 py-2">
                           <div className="flex flex-wrap gap-1">
                             {(showSuperAdminBoard || showPreSalesBoard) && (
-                              <Button size="sm" variant="outline" onClick={() => qualifyNow(lead.id)} data-testid={`lead-action-qualify-${lead.id}`}>Qualify</Button>
+                              <Button size="sm" onClick={() => qualifyNow(lead.id)} className="bg-amber-500 text-white hover:bg-amber-600" data-testid={`lead-action-qualify-${lead.id}`}>Qualify</Button>
                             )}
 
                             {(showSuperAdminBoard || showPreSalesBoard) && (
@@ -779,12 +818,12 @@ export const CRMPage = ({ auth, onLogout }) => {
                                   <option value="">Branch</option>
                                   {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.branch_name}</option>)}
                                 </select>
-                                <Button size="sm" variant="outline" onClick={() => assignBranchNow(lead.id)} data-testid={`lead-action-assign-${lead.id}`}>Assign</Button>
+                                <Button size="sm" onClick={() => assignBranchNow(lead.id)} className="bg-violet-500 text-white hover:bg-violet-600" data-testid={`lead-action-assign-${lead.id}`}>Assign</Button>
                               </>
                             )}
 
                             {(showSuperAdminBoard || showBranchBoard) && (
-                              <Button size="sm" variant="outline" onClick={() => confirmNow(lead.id)} data-testid={`lead-action-confirm-${lead.id}`}>Confirm</Button>
+                              <Button size="sm" onClick={() => confirmNow(lead.id)} className="bg-teal-500 text-white hover:bg-teal-600" data-testid={`lead-action-confirm-${lead.id}`}>Confirm</Button>
                             )}
                           </div>
                         </td>
@@ -811,7 +850,7 @@ export const CRMPage = ({ auth, onLogout }) => {
                   ))}
                 </select>
                 <Input type="datetime-local" value={bookingTime} onChange={(e) => setBookingTime(e.target.value)} data-testid="branch-booking-time-input" />
-                <Button variant="outline" onClick={checkDoctorsNow} data-testid="branch-check-doctors-button">Check Available</Button>
+                <Button onClick={checkDoctorsNow} className="bg-blue-500 text-white hover:bg-blue-600" data-testid="branch-check-doctors-button">Check Available</Button>
                 <select value={selectedDoctorForBooking} onChange={(e) => setSelectedDoctorForBooking(e.target.value)} className="h-9 rounded-md border border-slate-200 px-3 text-sm" data-testid="branch-available-doctor-select">
                   <option value="">Choose doctor</option>
                   {availableDoctors.map((doctor) => (
@@ -819,7 +858,7 @@ export const CRMPage = ({ auth, onLogout }) => {
                   ))}
                 </select>
               </div>
-              <Button onClick={bookNow} data-testid="branch-book-appointment-button">Book Appointment</Button>
+              <Button onClick={bookNow} className="bg-indigo-500 text-white hover:bg-indigo-600" data-testid="branch-book-appointment-button">Book Appointment</Button>
               <p className="text-xs text-slate-500" data-testid="branch-booking-note">
                 Only available doctors are shown; already booked doctors remain hidden.
               </p>
@@ -879,7 +918,7 @@ export const CRMPage = ({ auth, onLogout }) => {
                     <p className="text-xs text-slate-500" data-testid={`appointments-doctor-${appointment.id}`}>{appointment.doctor_name} · {appointment.slot_time}</p>
                     <p className="text-xs text-slate-500" data-testid={`appointments-status-${appointment.id}`}>{appointment.status}</p>
                     {(showSuperAdminBoard || showHeadPhysioBoard || showPhysioBoard) && appointment.status !== "completed" && (
-                      <Button size="sm" className="mt-2" onClick={() => completeNow(appointment.id)} data-testid={`appointments-complete-${appointment.id}`}>
+                      <Button size="sm" className="mt-2 bg-emerald-500 text-white hover:bg-emerald-600" onClick={() => completeNow(appointment.id)} data-testid={`appointments-complete-${appointment.id}`}>
                         Mark Completed
                       </Button>
                     )}
