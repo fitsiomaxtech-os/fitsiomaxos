@@ -5,13 +5,13 @@ import {
   Building2,
   CalendarDays,
   Database,
-  GitBranch,
   Headphones,
   LogOut,
   RefreshCw,
+  Settings,
   ShieldCheck,
   Stethoscope,
-  Users,
+  UserRound,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -160,14 +160,8 @@ export const CRMPage = ({ auth, onLogout }) => {
   const role = auth.user.role;
   const roleLabel = ROLE_META[role]?.label || role;
 
-  const roleCards = useMemo(
-    () =>
-      Object.entries(ROLE_META).map(([key, value]) => ({
-        key,
-        ...value,
-      })),
-    [],
-  );
+  const [preSalesStageTab, setPreSalesStageTab] = useState("All");
+  const [preSalesViewType, setPreSalesViewType] = useState("kanban");
 
   const safeCall = async (fn, fallback) => {
     try {
@@ -429,6 +423,19 @@ export const CRMPage = ({ auth, onLogout }) => {
 
   const filteredAppointmentsForPhysioBoards = appointments;
 
+  const preSalesLeads = useMemo(() => {
+    const rows = leads.filter((lead) => !lead.branch_id || ["New Lead", "Pre-sales Qualified"].includes(lead.stage));
+    if (preSalesStageTab === "All") {
+      return rows;
+    }
+    return rows.filter((lead) => lead.stage === preSalesStageTab);
+  }, [leads, preSalesStageTab]);
+
+  const preSalesKanbanStages = useMemo(
+    () => ["New Lead", "Pre-sales Qualified", "Assigned to Branch"],
+    [],
+  );
+
   const liveLeadPreview = useMemo(
     () => ({
       leads_preview: leads.slice(0, 5).map((lead) => ({
@@ -448,7 +455,7 @@ export const CRMPage = ({ auth, onLogout }) => {
       <Toaster richColors position="top-right" />
 
       <div className="mx-auto max-w-7xl space-y-6">
-        <header className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm" data-testid="role-board-header">
+        <header className="sticky top-0 z-20 rounded-xl border border-slate-200 bg-white p-5 shadow-sm" data-testid="role-board-header">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.14em] text-sky-600" data-testid="role-board-brand-subtitle">
@@ -462,6 +469,20 @@ export const CRMPage = ({ auth, onLogout }) => {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                className="border-slate-200 bg-white"
+                data-testid="role-board-profile-button"
+              >
+                <UserRound className="mr-2 h-4 w-4" /> {roleLabel} Profile
+              </Button>
+              <Button
+                variant="outline"
+                className="border-slate-200 bg-white"
+                data-testid="role-board-settings-button"
+              >
+                <Settings className="mr-2 h-4 w-4" /> Settings
+              </Button>
               <Button
                 variant="outline"
                 onClick={loadEverything}
@@ -482,29 +503,118 @@ export const CRMPage = ({ auth, onLogout }) => {
           </div>
         </header>
 
-        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3" data-testid="role-board-role-cards">
-          {roleCards.map((item) => {
-            const Icon = item.icon;
-            const active = item.key === role;
-            return (
-              <div
-                key={item.key}
-                className={`rounded-lg border p-4 ${active ? "border-sky-400 bg-sky-50" : "border-slate-200 bg-white"}`}
-                data-testid={`role-board-card-${item.key}`}
-              >
-                <div className="inline-flex rounded-md bg-sky-100 p-2 text-sky-600" data-testid={`role-board-card-icon-${item.key}`}>
-                  <Icon className="h-4 w-4" />
+        {showPreSalesBoard && (
+          <Card className="border-slate-200 bg-white" data-testid="presales-main-board-card">
+            <CardHeader>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <CardTitle className="text-base" data-testid="presales-main-board-title">
+                  Pre-sales Pipeline Board
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant={preSalesViewType === "kanban" ? "default" : "outline"}
+                    onClick={() => setPreSalesViewType("kanban")}
+                    data-testid="presales-view-kanban-button"
+                  >
+                    Kanban
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={preSalesViewType === "list" ? "default" : "outline"}
+                    onClick={() => setPreSalesViewType("list")}
+                    data-testid="presales-view-list-button"
+                  >
+                    List
+                  </Button>
                 </div>
-                <p className="mt-2 text-sm font-semibold text-slate-900" data-testid={`role-board-card-title-${item.key}`}>
-                  {item.label}
-                </p>
-                <p className={`text-xs ${active ? "text-sky-700" : "text-slate-500"}`} data-testid={`role-board-card-state-${item.key}`}>
-                  {active ? "Active board" : "Other user board"}
-                </p>
               </div>
-            );
-          })}
-        </section>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2" data-testid="presales-stage-tabs-row">
+                <button
+                  type="button"
+                  onClick={() => setPreSalesStageTab("All")}
+                  className={`rounded-md border px-3 py-2 text-xs ${preSalesStageTab === "All" ? "border-sky-500 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-600"}`}
+                  data-testid="presales-stage-tab-all"
+                >
+                  All
+                </button>
+                {PIPELINE_STAGES.map((stage) => (
+                  <button
+                    key={stage}
+                    type="button"
+                    onClick={() => setPreSalesStageTab(stage)}
+                    className={`rounded-md border px-3 py-2 text-xs ${preSalesStageTab === stage ? "border-sky-500 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-600"}`}
+                    data-testid={`presales-stage-tab-${stage}`}
+                  >
+                    {stage}
+                  </button>
+                ))}
+              </div>
+
+              {preSalesViewType === "kanban" ? (
+                <div className="flex gap-3 overflow-x-auto pb-2" data-testid="presales-kanban-board">
+                  {preSalesKanbanStages.map((stage) => (
+                    <div key={stage} className="min-w-[280px] rounded-lg border border-slate-200 bg-slate-50 p-3" data-testid={`presales-kanban-column-${stage}`}>
+                      <p className="mb-2 text-sm font-semibold text-slate-700" data-testid={`presales-kanban-column-title-${stage}`}>
+                        {stage}
+                      </p>
+                      <div className="space-y-2">
+                        {preSalesLeads.filter((lead) => lead.stage === stage).map((lead) => (
+                          <div key={lead.id} className="rounded-md border border-slate-200 bg-white p-3" data-testid={`presales-kanban-card-${lead.id}`}>
+                            <p className="text-sm text-slate-900" data-testid={`presales-kanban-card-name-${lead.id}`}>{lead.name}</p>
+                            <p className="text-xs text-slate-500" data-testid={`presales-kanban-card-source-${lead.id}`}>{lead.source_tab || lead.source_type}</p>
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              <Button size="sm" variant="outline" onClick={() => qualifyNow(lead.id)} data-testid={`presales-kanban-qualify-${lead.id}`}>Qualify</Button>
+                              <select value={assignBranchSelection[lead.id] || ""} onChange={(e) => setAssignBranchSelection((p) => ({ ...p, [lead.id]: e.target.value }))} className="h-8 rounded border border-slate-200 px-1 text-xs" data-testid={`presales-kanban-branch-select-${lead.id}`}>
+                                <option value="">Branch</option>
+                                {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.branch_name}</option>)}
+                              </select>
+                              <Button size="sm" variant="outline" onClick={() => assignBranchNow(lead.id)} data-testid={`presales-kanban-assign-${lead.id}`}>Assign</Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="overflow-auto rounded-lg border border-slate-200" data-testid="presales-list-table-wrap">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-slate-50 text-left text-slate-600">
+                      <tr>
+                        <th className="px-3 py-2">Lead</th>
+                        <th className="px-3 py-2">Source</th>
+                        <th className="px-3 py-2">Stage</th>
+                        <th className="px-3 py-2">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {preSalesLeads.map((lead) => (
+                        <tr key={lead.id} className="border-t border-slate-100" data-testid={`presales-list-row-${lead.id}`}>
+                          <td className="px-3 py-2" data-testid={`presales-list-name-${lead.id}`}>{lead.name} · {lead.phone}</td>
+                          <td className="px-3 py-2" data-testid={`presales-list-source-${lead.id}`}>{lead.source_tab || lead.source_type}</td>
+                          <td className="px-3 py-2" data-testid={`presales-list-stage-${lead.id}`}>{lead.stage}</td>
+                          <td className="px-3 py-2">
+                            <div className="flex flex-wrap gap-1">
+                              <Button size="sm" variant="outline" onClick={() => qualifyNow(lead.id)} data-testid={`presales-list-qualify-${lead.id}`}>Qualify</Button>
+                              <select value={assignBranchSelection[lead.id] || ""} onChange={(e) => setAssignBranchSelection((p) => ({ ...p, [lead.id]: e.target.value }))} className="h-8 rounded border border-slate-200 px-1 text-xs" data-testid={`presales-list-branch-select-${lead.id}`}>
+                                <option value="">Branch</option>
+                                {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.branch_name}</option>)}
+                              </select>
+                              <Button size="sm" variant="outline" onClick={() => assignBranchNow(lead.id)} data-testid={`presales-list-assign-${lead.id}`}>Assign</Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {(showSuperAdminBoard || showBusinessDevBoard) && (
           <Card className="border-slate-200 bg-white" data-testid="top-board-card">
@@ -614,7 +724,7 @@ export const CRMPage = ({ auth, onLogout }) => {
           </div>
         )}
 
-        {(showSuperAdminBoard || showPreSalesBoard || showBranchBoard) && (
+        {(showSuperAdminBoard || showBranchBoard) && (
           <Card className="border-slate-200 bg-white" data-testid="lead-master-card">
             <CardHeader>
               <CardTitle className="text-base">Lead Master Board</CardTitle>
