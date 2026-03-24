@@ -39,7 +39,7 @@
   "seed_data_creation": "Created TEST_BD_* branches, leads, and sheet connections during testing",
   "retest_needed": false,
   "should_main_agent_self_test": true,
-  "context_for_next_testing_agent": "BD Dashboard fully tested on https://bizdev-dashboard.preview.emergentagent.com. Login: businessdev@fitsiomax.com / bd123. All 5 tabs working: Dashboard (metrics, pipeline, source/branch breakdown, recent leads), Branches (table + create form), Lead Master (table with filters, qualify/assign buttons visible but restricted), Google Sheet Connection (create + mapping + sync), Lead Source (aggregation table with stage breakdown). Backend role permissions correctly restrict qualify/assign to pre_sales role only.",
+  "context_for_next_testing_agent": "BD Dashboard fully tested on https://lead-manager-100.preview.emergentagent.com. Login: businessdev@fitsiomax.com / bd123. All 5 tabs working: Dashboard (metrics, pipeline, source/branch breakdown, recent leads), Branches (table + create form), Lead Master (table with filters, qualify/assign buttons visible but restricted), Google Sheet Connection (create + mapping + sync), Lead Source (aggregation table with stage breakdown). Backend role permissions correctly restrict qualify/assign to pre_sales role only.",
   "rca_of_the_issue": "No blocking issues found. The 3 backend test failures are expected behavior - BD role is intentionally restricted from qualify/assign operations which are pre_sales responsibilities.",
   "mocked_api_status": "Google Sheets OAuth is not live - sheet sync uses manual JSON payload as documented"
 }

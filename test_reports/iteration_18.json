@@ -1,0 +1,113 @@
+{
+  "summary": "Completed comprehensive regression testing after backend refactoring from monolithic server.py (2570 lines) to modular structure. All 43 backend API tests passed (100%). All 6 demo user logins working correctly via both API and frontend UI. Password hashing with bcrypt verified working.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Branch Admin Board - Leads by Branch section",
+        "issues": ["Multiple 'Unknown' entries shown for branches without proper names - cosmetic issue only"]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_v3_regression.py",
+    "/app/test_reports/pytest/pytest_results_iteration18.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Backend refactoring successful - all API endpoints remain identical in behavior",
+    "Password hashing with bcrypt working correctly - auto-upgrade from plain-text on login verified",
+    "Modular router structure properly organized: v3_auth, v3_config, v3_leads, v3_branch_admin, v3_appointments, v3_sheets, v3_dashboard",
+    "All 6 demo users can login: admin, businessdev, presales, branchadmin, headphysio, physio",
+    "Session management working correctly - logout invalidates tokens",
+    "Role-based access control working for all endpoints"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_v3_regression.py"
+  ],
+  "success_rate": {
+    "backend": "100% (43/43 tests passed)",
+    "frontend": "100% (All 6 role logins working)"
+  },
+  "seed_data_creation": "Test data created with TEST_ prefix for regression testing",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Iteration 18 - Post-refactoring regression test completed. Backend was refactored from 2570-line monolithic server.py into modular files: server.py (45 lines), database.py, security.py, deps.py, seed.py, and routers/ directory with v3_auth.py, v3_config.py, v3_leads.py, v3_branch_admin.py, v3_appointments.py, v3_sheets.py, v3_dashboard.py. All API endpoints remain at /api/v3/*. Password hashing with bcrypt added - existing plain-text passwords auto-upgrade on login. All 6 demo users verified: admin@fitsiomax.com/admin123 (super_admin), businessdev@fitsiomax.com/bd123 (business_dev), presales@fitsiomax.com/presales123 (pre_sales), branchadmin@fitsiomax.com/branch123 (branch_admin), headphysio@fitsiomax.com/head123 (head_physio), physio@fitsiomax.com/physio123 (physio). Test file: /app/backend/tests/test_v3_regression.py covers all V3 endpoints.",
+  "features_tested": {
+    "v3_auth": {
+      "login_all_6_users": "PASS - All demo users can login with correct credentials",
+      "invalid_credentials": "PASS - Returns 401 for wrong password",
+      "nonexistent_user": "PASS - Returns 401 for unknown email",
+      "logout": "PASS - Token invalidated after logout"
+    },
+    "v3_branches": {
+      "list": "PASS - GET /api/v3/branches",
+      "create": "PASS - POST /api/v3/branches",
+      "update": "PASS - PUT /api/v3/branches/{id}",
+      "delete": "PASS - DELETE /api/v3/branches/{id}"
+    },
+    "v3_leads": {
+      "list": "PASS - GET /api/v3/leads",
+      "create_manual": "PASS - POST /api/v3/leads/manual",
+      "qualify": "PASS - POST /api/v3/leads/{id}/qualify",
+      "assign_branch": "PASS - POST /api/v3/leads/{id}/assign-branch",
+      "move_stage": "PASS - POST /api/v3/leads/{id}/move-stage"
+    },
+    "v3_branch_board": {
+      "get_board": "PASS - GET /api/v3/branch-board/{branch_id}"
+    },
+    "v3_branch_admin_actions": {
+      "branch_stage_move": "PASS - POST /api/v3/leads/{id}/branch-stage",
+      "collect_consultation_fee": "PASS - POST /api/v3/leads/{id}/collect-fee (consultation)",
+      "collect_package_fee": "PASS - POST /api/v3/leads/{id}/collect-fee (package)"
+    },
+    "v3_doctors": {
+      "list": "PASS - GET /api/v3/doctors",
+      "create": "PASS - POST /api/v3/doctors",
+      "add_slots": "PASS - POST /api/v3/doctors/{id}/slots",
+      "available": "PASS - GET /api/v3/doctors/available"
+    },
+    "v3_appointments": {
+      "list": "PASS - GET /api/v3/appointments"
+    },
+    "v3_dashboard": {
+      "bd_summary": "PASS - GET /api/v3/dashboard/bd-summary",
+      "lead_sources": "PASS - GET /api/v3/lead-sources",
+      "master_board": "PASS - GET /api/v3/boards/master",
+      "branch_board": "PASS - GET /api/v3/boards/branch/{id}"
+    },
+    "v3_lead_details": {
+      "add_remark": "PASS - POST /api/v3/leads/{id}/remarks",
+      "get_remarks": "PASS - GET /api/v3/leads/{id}/remarks",
+      "add_follow_up": "PASS - POST /api/v3/leads/{id}/follow-ups",
+      "get_follow_ups": "PASS - GET /api/v3/leads/{id}/follow-ups",
+      "get_activity": "PASS - GET /api/v3/leads/{id}/activity"
+    },
+    "v3_team_members": {
+      "list": "PASS - GET /api/v3/team-members",
+      "create": "PASS - POST /api/v3/team-members"
+    },
+    "v3_sheets": {
+      "create_connection": "PASS - POST /api/v3/sheets/connections",
+      "list_connections": "PASS - GET /api/v3/sheets/connections",
+      "save_mapping": "PASS - POST /api/v3/sheets/connections/{id}/mapping"
+    },
+    "v3_verticals": {
+      "list": "PASS - GET /api/v3/verticals"
+    },
+    "frontend_login": {
+      "super_admin": "PASS - Super Admin Master View displayed",
+      "business_dev": "PASS - Business Development Master View with Dashboard tabs",
+      "pre_sales": "PASS - Pre-sales Master View with Kanban board",
+      "branch_admin": "PASS - Branch Admin Master View with 8-stage pipeline",
+      "head_physio": "PASS - Head Physio Master View with Appointments Board",
+      "physio": "PASS - Physio Master View with Appointments Board"
+    }
+  },
+  "mocked_api_status": "Google Sheets OAuth not live - requires Google API credentials (as expected)"
+}

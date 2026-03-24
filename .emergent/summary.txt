@@ -1,0 +1,189 @@
+<analysis>**original_problem_statement:**
+The user wants to build a multi-faceted SaaS application called Fitsiomax OS for a physiotherapy and fitness business. The application has been built incrementally, screen by screen, focusing on different user roles.
+
+**PRODUCT REQUIREMENTS (current phase):**
+- **Roles:** Super Admin, Business Development, Pre-sales, Branch Admin, Head Physio, Physio.
+- **UI:** A minimal, clean SaaS look with a full-width layout, a sticky header, and a white-and-blue color scheme.
+- **Lead Flow:**
+    - **Pre-sales:** Manages incoming leads, qualifies them, and assigns them to a branch or books an initial appointment.
+    - **Business Development:** Manages branches, connects Google Sheets for lead sourcing, and oversees lead data.
+    - **Branch Admin:** Manages the entire patient journey within a branch through a detailed 8-stage pipeline, from initial appointment confirmation to collecting fees, booking consultations with Head Physios, upselling packages, and assigning Jr. Physios.
+- **Integrations:** A Google Sheets connection is required for lead sourcing.
+
+**User's preferred language**: English
+
+**what currently exists?**
+A full-stack application with a FastAPI backend and a React frontend. The application supports 6 distinct user roles with JWT-based authentication. The UI features a full-width layout with a sticky header.
+
+The monolithic frontend () has been significantly refactored into three role-specific, self-contained components:
+1.  ****: A 5-tab dashboard for the Business Development role, including functionality to manage branches (Add/Edit/Delete via popups).
+2.  ****: A redesigned board for the Pre-sales role with Kanban/List views, lead creation popups, and a detailed lead modal. This modal includes an intelligent flow for assigning leads to branches or booking initial appointments via a Calendly-style scheduler.
+3.  ****: A comprehensive Kanban board for the Branch Admin role, featuring a custom 8-stage pipeline to manage the patient lifecycle from appointment to package payment and physio assignment.
+
+The backend is a large monolithic  file that has grown to support all the new features. Robust data-seeding scripts have been used to populate the database with realistic test users, leads, branches, and doctors with available slots.
+
+**Last working item**:
+-   **Last item agent was working**: The agent just completed the implementation of the entire **Branch Admin pipeline**. This was a major feature that involved creating a new 8-stage Kanban board, adding multiple backend endpoints for actions like collecting fees, booking appointments, and assigning physios, and creating a new  component to house this logic.
+-   **Status**: USER VERIFICATION PENDING
+-   **Agent Testing Done**: Y
+-   **Which testing method agent to use?**: NA
+-   **User Testing Done**: N
+
+**All Pending/In progress Issue list**:
+-   **Issue 1**: Refactor monolithic backend  file (P0)
+-   **Issue 2**: Implement secure password hashing (P1)
+
+**Issues Detail**:
+-   **Issue 1**:
+    -   **Attempted fixes**: None. The file has grown from ~2100 to over 2500 lines, making it increasingly difficult to maintain.
+    -   **Next debug checklist**:
+        -   Create a new directory structure in  (e.g., , , , ).
+        -   Break down the  file by moving Pydantic models to , API routers (all endpoints under ) to , and business logic/database helpers to .
+        -   Update  (or rename ) to import and include the routers.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical technical debt item. Refactoring will significantly improve backend code maintainability, reduce complexity, and lower the risk of regressions in future development.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: Backend
+    -   **Blocked on other issue**: None
+
+-   **Issue 2**:
+    -   **Attempted fixes**: None.
+    -   **Next debug checklist**:
+        -   Add  with  context to  and install it.
+        -   In , modify all user creation logic (e.g., ) to hash the password before saving it to the database.
+        -   Modify the login endpoint () to verify the provided password against the stored hash.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical security flaw. Fixing it is essential for protecting user credentials by replacing plain-text password storage.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: Backend
+    -   **Blocked on other issue**: None
+
+**In progress Task List**:
+-   None.
+
+**Upcoming and Future Tasks**
+-   **Upcoming Tasks**:
+    -   **(P0) Implement live Google Sheets OAuth connection flow**: The backend models and some APIs exist, but a full, user-facing OAuth flow for the Business Development role to connect their Google account and select sheets needs to be built. This is a core product requirement.
+    -   **(P1) Refine Head Physio Board**: Build the dedicated UI and logic for the Head Physio role's dashboard and workflow.
+    -   **(P1) Refine Physio Board**: Build the dedicated UI and logic for the Jr. Physio role's dashboard and workflow.
+
+-   **Future Tasks**:
+    -   Build a central visual weekly calendar for Branch Admins to see all appointments at a glance.
+    -   Add drag-and-drop functionality to the Kanban boards for easier lead management.
+    -   Implement a notification system for key events (e.g., new lead assignment, appointment confirmation).
+    -   Implement an auto-sync scheduler for connected Google Sheets.
+
+**Completed work in this session**
+-   **Branch Admin Board & Pipeline (DONE)**: Implemented a full 8-stage Kanban board () for Branch Admins, handling the patient journey from appointment to package payment.
+-   **Pre-sales Board Advanced Flows (DONE)**: Implemented a branch selection popup and a Calendly-style appointment booking scheduler within the Pre-sales lead detail modal.
+-   **Business Development Branch Management (DONE)**: Added Add/Edit/Delete functionality for branches via popup modals in the  component.
+-   **Header & Logo UI Overhaul (DONE)**: Iteratively redesigned the application header and logo based on multiple user requests, settling on a full-width, sticky white header with blue text.
+-   **Data Seeding (DONE)**: Created and executed scripts to seed the database with realistic test data for all roles, including leads, branches with admins, and doctors with specific time slots.
+-   **Bug Fixes & Refactoring (DONE)**:
+    -   Resolved a recurring React hydration warning.
+    -   Cleaned up numerous duplicate function declarations in .
+    -   Fixed Python linting issues and redefined duplicate backend endpoints.
+
+**Earlier issues found/mentioned but not fixed**
+-   **Issue 1**: Insecure Password Storage
+    -   **Debug checklist**: Implement a hashing library like  in  for user creation and login endpoints.
+    -   **Why to solve this issue and what will be achieved with this?**: To secure user credentials by replacing plain-text password storage with hashed passwords. This is a critical security best practice.
+    -   **Should Test frontend/backend/both after fix**: Backend
+    -   **Is recurring issue?**: Y
+
+-   **Issue 2**: Monolithic Backend Codebase
+    -   **Debug checklist**: Refactor  into a modular structure (e.g., routers, models, services).
+    -   **Why to solve this issue and what will be achieved with this?**: To improve maintainability, reduce complexity, and minimize the risk of regressions during future development.
+    -   **Should Test frontend/backend/both after fix**: Both
+    -   **Is recurring issue?**: Y
+
+**Known issue recurrence from previous fork**
+-   None.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+-   **Backend**: FastAPI, MongoDB (motor)
+-   **Frontend**: React, Tailwind CSS, Shadcn/UI
+-   **Authentication**: Role-Based Access Control (RBAC) with JWT.
+-   **Architecture**: Single Page Application (SPA) with a monolithic backend. The frontend is being progressively refactored from a monolith into a container with role-specific components.
+
+**key DB schema**
+-   **users**: 
+-   **leads**: 
+-   **branches**: 
+-   **doctors**: 
+-   **lead_activity**: 
+-   **lead_remarks**: 
+-   **lead_followups**: 
+
+**changes in tech stack**
+-   None.
+
+**All files of reference**
+-   : The monolithic backend file, now over 2500 lines.
+-   : The main frontend container page.
+-   : The UI for the Business Development role.
+-   : The UI for the Pre-sales role.
+-   : The UI for the Branch Admin role.
+-   : The frontend API client, which has grown significantly.
+-   : The latest test report confirming the Branch Admin board works.
+
+**Areas that need refactoring**:
+-   **CRITICAL**:  must be broken down into a modular structure (routers, models, services). Its current size is a major liability.
+-   **HIGH**: The user password system needs to be refactored to use hashing instead of plain text.
+
+**key api endpoints**
+-   , , ,  
+-   
+-   
+-   
+-   
+-   
+-    (for Branch Admin Kanban)
+
+**Critical Info for New Agent**
+-   The user approves features incrementally. Now that the last major feature request (Branch Admin pipeline) is complete, the highest priority should be to address the critical technical debt: **refactoring the monolithic ** and **implementing password hashing**. You should propose this as the next step.
+-   The frontend has been successfully refactored into role-specific components. Follow this pattern for any new role-specific UI (e.g., Head Physio, Physio).
+-   The next major feature will likely be the live Google Sheets OAuth integration. This will require using the  tool.
+
+**documents and test reports created in this job**
+-   
+-   
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **User #313**: Confirmed to proceed with building the new Branch Admin pipeline. (Status: COMPLETED)
+2.  **User #310**: Requested the new 8-stage Branch Admin pipeline. (Status: COMPLETED)
+3.  **User #273**: Requested Edit/Delete for branches and for actions to be in popups. (Status: COMPLETED)
+4.  **User #194**: Requested the branch assignment popup and the Calendly-style appointment booking flow. (Status: COMPLETED)
+5.  **User #183**: Requested fixes for the sticky header, removal of a JSON preview, and seeding of test leads. (Status: COMPLETED)
+6.  **User #170**: Requested UI changes for the header (full width, white background, big title). (Status: COMPLETED)
+7.  **User #163**: Requested UI changes for the header (font size, user name position). (Status: COMPLETED)
+8.  **User #152**: Requested UI changes for the header text. (Status: COMPLETED)
+9.  **User #145**: Provided a new logo to use. (Status: COMPLETED)
+10. **User #128**: Requested a symbol-only logo. (Status: COMPLETED)
+
+All recent user requests have been addressed. The agent is now at a natural stopping point to tackle technical debt before the next feature.
+
+**Project Health Check:**
+-   **Broken**: Password storage is insecure (plain text). This is a critical vulnerability.
+-   **Mocked**: The Google Sheets integration is not yet a live OAuth flow; it uses mocked data or manual triggers.
+
+**3rd Party Integrations**
+-   **Google Sheets API**: Planned for lead data synchronization. The live OAuth flow is a high-priority upcoming task.
+
+**Testing status**
+-   **Testing agent used after significant changes**: YES. The agent consistently used the testing agent after every major feature completion, with the last run being .
+-   **Troubleshoot agent used after agent stuck in loop**: NO
+-   **Test files created**: None. However, the agent has used extensive ad-hoc bash scripts to seed test data for branches, users, doctors, and leads, effectively creating a test suite for each new feature.
+-   **Known regressions**: None. The testing agent has caught and fixed several minor issues before they became regressions.
+
+**Credentials to test flow:**
+Use the Demo User dropdown on the login page to access different roles. The backend seeding scripts have created users for each role (e.g.,  with password ), but using the dropdown is the most reliable method.
+
+**What agent forgot to execute**
+-   The agent has consistently deferred the two most critical technical debt items from the original handoff:
+    1.  Refactoring the monolithic .
+    2.  Implementing secure password hashing.
+    These tasks have been on the backlog for the entire session and should now be prioritized.</analysis>
