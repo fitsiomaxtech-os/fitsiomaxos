@@ -4,7 +4,7 @@ import { loadSession } from "@/lib/session";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const api = axios.create({
-  baseURL: `${BACKEND_URL}/api/v2`,
+  baseURL: `${BACKEND_URL}/api/v3`,
 });
 
 api.interceptors.request.use((config) => {
@@ -26,21 +26,33 @@ export const apiLogout = async () => {
 };
 
 export const getDashboardSummary = async () => (await api.get("/dashboard/summary")).data;
-export const getLocations = async () => (await api.get("/meta/locations")).data;
-export const getServices = async () => (await api.get("/services")).data;
-export const createService = async (payload) => (await api.post("/services", payload)).data;
+export const getVerticals = async () => (await api.get("/verticals")).data;
+export const createVertical = async (payload) => (await api.post("/verticals", payload)).data;
+
+export const getBranches = async () => (await api.get("/branches")).data;
+export const createBranch = async (payload) => (await api.post("/branches", payload)).data;
+
 export const getDoctors = async (params) => (await api.get("/doctors", { params })).data;
 export const createDoctor = async (payload) => (await api.post("/doctors", payload)).data;
-export const addDoctorSlots = async (doctorId, payload) =>
-  (await api.post(`/doctors/${doctorId}/slots`, payload)).data;
-export const getDoctorAvailability = async (doctorId) =>
-  (await api.get(`/doctors/${doctorId}/availability`)).data;
+export const addDoctorSlots = async (doctorId, payload) => (await api.post(`/doctors/${doctorId}/slots`, payload)).data;
+export const getAvailableDoctors = async (params) => (await api.get("/doctors/available", { params })).data;
 
 export const getLeads = async (params) => (await api.get("/leads", { params })).data;
-export const createLead = async (payload) => (await api.post("/leads", payload)).data;
-export const importLeads = async (payload) => (await api.post("/leads/import", payload)).data;
+export const createManualLead = async (payload) => (await api.post("/leads/manual", payload)).data;
+export const qualifyLead = async (leadId) => (await api.post(`/leads/${leadId}/qualify`)).data;
+export const assignLeadBranch = async (leadId, payload) => (await api.post(`/leads/${leadId}/assign-branch`, payload)).data;
+export const confirmLead = async (leadId) => (await api.post(`/leads/${leadId}/confirm`)).data;
+export const bookLeadAppointment = async (leadId, payload) => (await api.post(`/leads/${leadId}/book-appointment`, payload)).data;
 
 export const getAppointments = async (params) => (await api.get("/appointments", { params })).data;
-export const createAppointment = async (payload) => (await api.post("/appointments", payload)).data;
+export const completeAppointment = async (appointmentId) => (await api.post(`/appointments/${appointmentId}/complete`)).data;
 
-export const getSheetsStatus = async () => (await api.get("/sheets/status")).data;
+export const createSheetConnection = async (payload) => (await api.post("/sheets/connections", payload)).data;
+export const getSheetConnections = async () => (await api.get("/sheets/connections")).data;
+export const saveSheetMapping = async (connectionId, payload) =>
+  (await api.post(`/sheets/connections/${connectionId}/mapping`, payload)).data;
+export const syncSheetConnection = async (connectionId, payload) =>
+  (await api.post(`/sheets/connections/${connectionId}/sync`, payload)).data;
+
+export const getMasterBoard = async () => (await api.get("/boards/master")).data;
+export const getBranchBoard = async (branchId) => (await api.get(`/boards/branch/${branchId}`)).data;

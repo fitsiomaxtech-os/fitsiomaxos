@@ -49,7 +49,7 @@ export const LoginPage = ({ onLogin }) => {
                 </div>
               </div>
               <p className="text-sm text-slate-300" data-testid="login-description">
-                Appointment Book System with role-based lead routing and doctor calendar booking.
+                FITSIOMAX OS with Business Development sheets sync, pre-sales routing, branch boards, and physio calendars.
               </p>
 
               <Tabs defaultValue="super_admin" data-testid="login-role-tabs">
@@ -105,9 +105,11 @@ export const LoginPage = ({ onLogin }) => {
 
               <div className="mt-4 rounded-md border border-slate-700 bg-slate-950/70 p-3 text-xs text-slate-300" data-testid="login-demo-accounts">
                 <p><strong>Super Admin:</strong> admin@fitsiomax.com / admin123</p>
-                <p><strong>Online Fitness:</strong> onlinefitness@fitsiomax.com / online123</p>
-                <p><strong>Online Physio:</strong> onlinephysio@fitsiomax.com / physio123</p>
-                <p><strong>Offline Physio:</strong> offlinephysio@fitsiomax.com / offline123</p>
+                <p><strong>Business Dev:</strong> businessdev@fitsiomax.com / bd123</p>
+                <p><strong>Pre Sales:</strong> presales@fitsiomax.com / presales123</p>
+                <p><strong>Branch Admin:</strong> branchadmin@fitsiomax.com / branch123</p>
+                <p><strong>Head Physio:</strong> headphysio@fitsiomax.com / head123</p>
+                <p><strong>Physio:</strong> physio@fitsiomax.com / physio123</p>
               </div>
             </CardContent>
           </Card>
@@ -119,8 +121,8 @@ export const LoginPage = ({ onLogin }) => {
               Appointment Book System
             </h2>
             <p className="mt-3 text-sm text-slate-200" data-testid="login-right-description">
-              Route leads from manual/Google Sheet sources to Online Fitness, Online Physio, and Offline Physio,
-              then book slots directly from each doctor calendar.
+              Route Google Sheet leads by source tab (Instagram, Meta, Walkins), qualify in pre-sales,
+              assign to branches, and book appointments with available physiotherapists.
             </p>
           </div>
         </div>

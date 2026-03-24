@@ -1448,9 +1448,613 @@ async def v2_sheet_status(_: V2UserOut = Depends(v2_current_user)):
         "message": "CSV/manual import enabled. Google OAuth can be added in next phase.",
     }
 
+
+# -------------------------
+# FITSIOMAX OS V3
+# -------------------------
+v3_router = APIRouter(prefix="/api/v3")
+V3_VERTICALS = [
+    "offline_physiotherapy",
+    "online_physiotherapy",
+    "online_fitness",
+    "offline_fitness_gym",
+]
+V3_STAGES = [
+    "New Lead",
+    "Pre-sales Qualified",
+    "Assigned to Branch",
+    "Branch Confirmed",
+    "Appointment Booked",
+    "Completed",
+]
+
+
+def v3_col(name: str):
+    return db[f"fitsiomax_v3_{name}"]
+
+
+class V3UserOut(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    full_name: str
+    email: str
+    role: Literal["super_admin", "business_dev", "pre_sales", "branch_admin", "head_physio", "physio"]
+    branch_id: Optional[str] = None
+    created_at: str
+
+
+class V3LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class V3LoginResponse(BaseModel):
+    token: str
+    user: V3UserOut
+
+
+class V3VerticalCreate(BaseModel):
+    name: str
+    active: bool = True
+
+
+class V3VerticalOut(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    name: str
+    active: bool
+    created_at: str
+
+
+class V3BranchCreate(BaseModel):
+    branch_name: str
+    address: str
+    admin_name: str
+    admin_email: str
+    admin_password: str
+    admin_phone: Optional[str] = ""
+    vertical: str = "offline_physiotherapy"
+
+
+class V3BranchOut(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    branch_name: str
+    address: str
+    admin_user_id: str
+    admin_name: str
+    admin_email: str
+    admin_phone: Optional[str] = ""
+    vertical: str
+    created_at: str
+
+
+class V3DoctorCreate(BaseModel):
+    full_name: str
+    profile_type: Literal["head_physio", "physio"]
+    branch_id: Optional[str] = None
+    specialization: Optional[str] = ""
+
+
+class V3DoctorSlotsInput(BaseModel):
+    slots: List[str]
+
+
+class V3DoctorOut(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    full_name: str
+    profile_type: str
+    branch_id: str
+    specialization: Optional[str] = ""
+    slots: List[str]
+    created_at: str
+
+
+class V3LeadCreate(BaseModel):
+    name: str
+    phone: str
+    email: Optional[str] = ""
+    vertical: str = "offline_physiotherapy"
+    source_tab: Optional[str] = None
+    source_type: Literal["manual", "google_sheet"] = "manual"
+    branch_id: Optional[str] = None
+    notes: Optional[str] = ""
+    extra_fields: Optional[Dict[str, str]] = None
+
+
+class V3LeadOut(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    name: str
+    phone: str
+    email: Optional[str] = ""
+    vertical: str
+    source_tab: Optional[str] = None
+    source_type: str
+    stage: str
+    branch_id: Optional[str] = None
+    notes: Optional[str] = ""
+    extra_fields: Dict[str, str]
+    created_at: str
+    updated_at: str
+
+
+class V3AssignBranchInput(BaseModel):
+    branch_id: str
+
+
+class V3BookAppointmentInput(BaseModel):
+    doctor_id: str
+    slot_time: str
+
+
+class V3AppointmentOut(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    lead_id: str
+    lead_name: str
+    branch_id: str
+    doctor_id: str
+    doctor_name: str
+    slot_time: str
+    status: str
+    created_by_role: str
+    created_at: str
+
+
+class V3SheetConnectionCreate(BaseModel):
+    connection_name: str
+    spreadsheet_id: str
+    sync_interval_minutes: int = 30
+
+
+class V3SheetMappingInput(BaseModel):
+    field_map: Dict[str, str]
+    create_new_fields: bool = True
+
+
+class V3SheetTabRows(BaseModel):
+    tab_name: str
+    rows: List[Dict[str, str]]
+
+
+class V3SheetSyncInput(BaseModel):
+    tabs: List[V3SheetTabRows]
+
+
+async def v3_seed() -> None:
+    seed_users = [
+        {"full_name": "Super Admin", "email": "admin@fitsiomax.com", "password": "admin123", "role": "super_admin"},
+        {"full_name": "Business Development", "email": "businessdev@fitsiomax.com", "password": "bd123", "role": "business_dev"},
+        {"full_name": "Pre Sales", "email": "presales@fitsiomax.com", "password": "presales123", "role": "pre_sales"},
+        {"full_name": "Branch Admin", "email": "branchadmin@fitsiomax.com", "password": "branch123", "role": "branch_admin"},
+        {"full_name": "Head Physio", "email": "headphysio@fitsiomax.com", "password": "head123", "role": "head_physio"},
+        {"full_name": "Physio", "email": "physio@fitsiomax.com", "password": "physio123", "role": "physio"},
+    ]
+    for user in seed_users:
+        exists = await v3_col("users").find_one({"email": user["email"]}, {"_id": 0})
+        if not exists:
+            await v3_col("users").insert_one(
+                {
+                    "id": str(uuid.uuid4()),
+                    "full_name": user["full_name"],
+                    "email": user["email"],
+                    "password": user["password"],
+                    "role": user["role"],
+                    "branch_id": None,
+                    "is_active": True,
+                    "created_at": now_iso(),
+                }
+            )
+
+    if await v3_col("verticals").count_documents({}) == 0:
+        for name in V3_VERTICALS:
+            await v3_col("verticals").insert_one(
+                {
+                    "id": str(uuid.uuid4()),
+                    "name": name,
+                    "active": True,
+                    "created_at": now_iso(),
+                }
+            )
+
+
+@app.on_event("startup")
+async def v3_startup_seed():
+    await v3_seed()
+
+
+async def v3_current_user(authorization: str = Header(...)) -> V3UserOut:
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authorization header")
+    token = authorization.split(" ", 1)[1].strip()
+    session = await v3_col("sessions").find_one({"token": token}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=401, detail="Session expired")
+    user = await v3_col("users").find_one({"id": session["user_id"], "is_active": True}, {"_id": 0, "password": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return V3UserOut(**user)
+
+
+def v3_require_roles(*roles: str):
+    async def checker(user: V3UserOut = Depends(v3_current_user)) -> V3UserOut:
+        if user.role not in roles:
+            raise HTTPException(status_code=403, detail="Not allowed")
+        return user
+
+    return checker
+
+
+@v3_router.get("/")
+async def v3_root():
+    return {"message": "FITSIOMAX OS API v3"}
+
+
+@v3_router.post("/auth/login", response_model=V3LoginResponse)
+async def v3_login(payload: V3LoginRequest):
+    user = await v3_col("users").find_one({"email": payload.email.lower(), "is_active": True}, {"_id": 0})
+    if not user or user.get("password") != payload.password:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    token = str(uuid.uuid4())
+    await v3_col("sessions").delete_many({"user_id": user["id"]})
+    await v3_col("sessions").insert_one({"token": token, "user_id": user["id"], "created_at": now_iso()})
+    user_public = {k: v for k, v in user.items() if k != "password"}
+    return V3LoginResponse(token=token, user=V3UserOut(**user_public))
+
+
+@v3_router.post("/auth/logout")
+async def v3_logout(user: V3UserOut = Depends(v3_current_user), authorization: str = Header(...)):
+    token = authorization.split(" ", 1)[1].strip()
+    await v3_col("sessions").delete_one({"token": token, "user_id": user.id})
+    return {"message": "Logged out"}
+
+
+@v3_router.get("/verticals", response_model=List[V3VerticalOut])
+async def v3_get_verticals(_: V3UserOut = Depends(v3_current_user)):
+    rows = await v3_col("verticals").find({}, {"_id": 0}).to_list(100)
+    return [V3VerticalOut(**row) for row in rows]
+
+
+@v3_router.post("/verticals", response_model=V3VerticalOut)
+async def v3_add_vertical(payload: V3VerticalCreate, _: V3UserOut = Depends(v3_require_roles("super_admin"))):
+    doc = {
+        "id": str(uuid.uuid4()),
+        "name": payload.name,
+        "active": payload.active,
+        "created_at": now_iso(),
+    }
+    await v3_col("verticals").insert_one(doc.copy())
+    return V3VerticalOut(**doc)
+
+
+@v3_router.get("/branches", response_model=List[V3BranchOut])
+async def v3_get_branches(_: V3UserOut = Depends(v3_current_user)):
+    rows = await v3_col("branches").find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [V3BranchOut(**row) for row in rows]
+
+
+@v3_router.post("/branches", response_model=V3BranchOut)
+async def v3_create_branch(payload: V3BranchCreate, _: V3UserOut = Depends(v3_require_roles("super_admin", "business_dev"))):
+    branch_id = str(uuid.uuid4())
+    admin_user_id = str(uuid.uuid4())
+    await v3_col("users").insert_one(
+        {
+            "id": admin_user_id,
+            "full_name": payload.admin_name,
+            "email": payload.admin_email.lower(),
+            "password": payload.admin_password,
+            "role": "branch_admin",
+            "branch_id": branch_id,
+            "is_active": True,
+            "created_at": now_iso(),
+        }
+    )
+    branch = {
+        "id": branch_id,
+        "branch_name": payload.branch_name,
+        "address": payload.address,
+        "admin_user_id": admin_user_id,
+        "admin_name": payload.admin_name,
+        "admin_email": payload.admin_email.lower(),
+        "admin_phone": payload.admin_phone,
+        "vertical": payload.vertical,
+        "created_at": now_iso(),
+    }
+    await v3_col("branches").insert_one(branch.copy())
+    return V3BranchOut(**branch)
+
+
+@v3_router.get("/doctors", response_model=List[V3DoctorOut])
+async def v3_get_doctors(branch_id: Optional[str] = None, user: V3UserOut = Depends(v3_current_user)):
+    query: Dict[str, object] = {}
+    if user.role in ["branch_admin", "head_physio", "physio"]:
+        query["branch_id"] = user.branch_id
+    elif branch_id:
+        query["branch_id"] = branch_id
+    rows = await v3_col("doctors").find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [V3DoctorOut(**row) for row in rows]
+
+
+@v3_router.post("/doctors", response_model=V3DoctorOut)
+async def v3_add_doctor(payload: V3DoctorCreate, user: V3UserOut = Depends(v3_require_roles("super_admin", "branch_admin", "head_physio"))):
+    branch_id = payload.branch_id or user.branch_id
+    if not branch_id:
+        raise HTTPException(status_code=400, detail="Branch is required")
+    doctor = {
+        "id": str(uuid.uuid4()),
+        "full_name": payload.full_name,
+        "profile_type": payload.profile_type,
+        "branch_id": branch_id,
+        "specialization": payload.specialization,
+        "slots": [],
+        "created_at": now_iso(),
+    }
+    await v3_col("doctors").insert_one(doctor.copy())
+    return V3DoctorOut(**doctor)
+
+
+@v3_router.post("/doctors/{doctor_id}/slots", response_model=V3DoctorOut)
+async def v3_add_slots(doctor_id: str, payload: V3DoctorSlotsInput, _: V3UserOut = Depends(v3_require_roles("super_admin", "branch_admin", "head_physio"))):
+    doctor = await v3_col("doctors").find_one({"id": doctor_id}, {"_id": 0})
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    all_slots = sorted(set(doctor.get("slots", [])).union(set(payload.slots)))
+    await v3_col("doctors").update_one({"id": doctor_id}, {"$set": {"slots": all_slots}})
+    updated = await v3_col("doctors").find_one({"id": doctor_id}, {"_id": 0})
+    return V3DoctorOut(**updated)
+
+
+@v3_router.get("/doctors/available")
+async def v3_available_doctors(branch_id: str, slot_time: str, _: V3UserOut = Depends(v3_current_user)):
+    doctors = await v3_col("doctors").find({"branch_id": branch_id}, {"_id": 0}).to_list(1000)
+    booked = await v3_col("appointments").find({"branch_id": branch_id, "slot_time": slot_time, "status": "new_appointment"}, {"_id": 0, "doctor_id": 1}).to_list(200)
+    booked_ids = {item["doctor_id"] for item in booked}
+    available = [d for d in doctors if slot_time in d.get("slots", []) and d["id"] not in booked_ids]
+    return {"available_doctors": available}
+
+
+@v3_router.get("/leads", response_model=List[V3LeadOut])
+async def v3_get_leads(
+    stage: Optional[str] = None,
+    branch_id: Optional[str] = None,
+    source_tab: Optional[str] = None,
+    user: V3UserOut = Depends(v3_current_user),
+):
+    query: Dict[str, object] = {}
+    if stage:
+        query["stage"] = stage
+    if source_tab:
+        query["source_tab"] = source_tab
+
+    if user.role in ["branch_admin", "head_physio", "physio"]:
+        query["branch_id"] = user.branch_id
+    elif branch_id:
+        query["branch_id"] = branch_id
+
+    rows = await v3_col("leads").find(query, {"_id": 0}).sort("updated_at", -1).to_list(1000)
+    return [V3LeadOut(**row) for row in rows]
+
+
+@v3_router.post("/leads/manual", response_model=V3LeadOut)
+async def v3_manual_lead(payload: V3LeadCreate, _: V3UserOut = Depends(v3_require_roles("super_admin", "business_dev", "pre_sales", "branch_admin"))):
+    lead = {
+        "id": str(uuid.uuid4()),
+        "name": payload.name,
+        "phone": payload.phone,
+        "email": payload.email,
+        "vertical": payload.vertical,
+        "source_tab": payload.source_tab,
+        "source_type": payload.source_type,
+        "stage": "New Lead",
+        "branch_id": payload.branch_id,
+        "notes": payload.notes,
+        "extra_fields": payload.extra_fields or {},
+        "created_at": now_iso(),
+        "updated_at": now_iso(),
+    }
+    await v3_col("leads").insert_one(lead.copy())
+    return V3LeadOut(**lead)
+
+
+@v3_router.post("/leads/{lead_id}/qualify", response_model=V3LeadOut)
+async def v3_qualify_lead(lead_id: str, _: V3UserOut = Depends(v3_require_roles("pre_sales", "super_admin"))):
+    await v3_col("leads").update_one({"id": lead_id}, {"$set": {"stage": "Pre-sales Qualified", "updated_at": now_iso()}})
+    lead = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    return V3LeadOut(**lead)
+
+
+@v3_router.post("/leads/{lead_id}/assign-branch", response_model=V3LeadOut)
+async def v3_assign_branch(lead_id: str, payload: V3AssignBranchInput, _: V3UserOut = Depends(v3_require_roles("pre_sales", "super_admin"))):
+    await v3_col("leads").update_one(
+        {"id": lead_id},
+        {"$set": {"branch_id": payload.branch_id, "stage": "Assigned to Branch", "updated_at": now_iso()}},
+    )
+    lead = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    return V3LeadOut(**lead)
+
+
+@v3_router.post("/leads/{lead_id}/confirm", response_model=V3LeadOut)
+async def v3_confirm_lead(lead_id: str, user: V3UserOut = Depends(v3_require_roles("branch_admin", "super_admin"))):
+    filter_query = {"id": lead_id}
+    if user.role == "branch_admin":
+        filter_query["branch_id"] = user.branch_id
+
+    await v3_col("leads").update_one(filter_query, {"$set": {"stage": "Branch Confirmed", "updated_at": now_iso()}})
+    lead = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    return V3LeadOut(**lead)
+
+
+@v3_router.post("/leads/{lead_id}/book-appointment", response_model=V3AppointmentOut)
+async def v3_book_appointment(lead_id: str, payload: V3BookAppointmentInput, user: V3UserOut = Depends(v3_require_roles("branch_admin", "head_physio", "super_admin"))):
+    lead = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    doctor = await v3_col("doctors").find_one({"id": payload.doctor_id}, {"_id": 0})
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    if payload.slot_time not in doctor.get("slots", []):
+        raise HTTPException(status_code=400, detail="Doctor slot unavailable")
+    clash = await v3_col("appointments").find_one({"doctor_id": payload.doctor_id, "slot_time": payload.slot_time, "status": "new_appointment"}, {"_id": 0})
+    if clash:
+        raise HTTPException(status_code=409, detail="Slot already booked")
+
+    appointment = {
+        "id": str(uuid.uuid4()),
+        "lead_id": lead_id,
+        "lead_name": lead["name"],
+        "branch_id": lead.get("branch_id") or doctor["branch_id"],
+        "doctor_id": doctor["id"],
+        "doctor_name": doctor["full_name"],
+        "slot_time": payload.slot_time,
+        "status": "new_appointment",
+        "created_by_role": user.role,
+        "created_at": now_iso(),
+    }
+    await v3_col("appointments").insert_one(appointment.copy())
+    await v3_col("leads").update_one({"id": lead_id}, {"$set": {"stage": "Appointment Booked", "updated_at": now_iso()}})
+    return V3AppointmentOut(**appointment)
+
+
+@v3_router.get("/appointments", response_model=List[V3AppointmentOut])
+async def v3_get_appointments(view: Optional[str] = None, user: V3UserOut = Depends(v3_current_user)):
+    query: Dict[str, object] = {}
+    if user.role in ["branch_admin", "head_physio", "physio"]:
+        query["branch_id"] = user.branch_id
+    if view == "today":
+        today = datetime.now(timezone.utc).date().isoformat()
+        query["slot_time"] = {"$regex": f"^{today}"}
+    if view == "new":
+        query["status"] = "new_appointment"
+
+    rows = await v3_col("appointments").find(query, {"_id": 0}).sort("slot_time", 1).to_list(1000)
+    return [V3AppointmentOut(**row) for row in rows]
+
+
+@v3_router.post("/appointments/{appointment_id}/complete", response_model=V3AppointmentOut)
+async def v3_complete_appointment(appointment_id: str, _: V3UserOut = Depends(v3_require_roles("head_physio", "physio", "super_admin"))):
+    await v3_col("appointments").update_one({"id": appointment_id}, {"$set": {"status": "completed"}})
+    appointment = await v3_col("appointments").find_one({"id": appointment_id}, {"_id": 0})
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    await v3_col("leads").update_one({"id": appointment["lead_id"]}, {"$set": {"stage": "Completed", "updated_at": now_iso()}})
+    return V3AppointmentOut(**appointment)
+
+
+@v3_router.post("/sheets/connections")
+async def v3_create_sheet_connection(payload: V3SheetConnectionCreate, _: V3UserOut = Depends(v3_require_roles("business_dev", "super_admin"))):
+    connection = {
+        "id": str(uuid.uuid4()),
+        "connection_name": payload.connection_name,
+        "spreadsheet_id": payload.spreadsheet_id,
+        "sync_interval_minutes": payload.sync_interval_minutes,
+        "oauth_connected": False,
+        "callback_url": "https://therapy-crm-board.preview.emergentagent.com/api/oauth/sheets/callback",
+        "created_at": now_iso(),
+    }
+    await v3_col("sheet_connections").insert_one(connection.copy())
+    return connection
+
+
+@v3_router.get("/sheets/connections")
+async def v3_get_sheet_connections(_: V3UserOut = Depends(v3_require_roles("business_dev", "super_admin"))):
+    rows = await v3_col("sheet_connections").find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return rows
+
+
+@v3_router.post("/sheets/connections/{connection_id}/mapping")
+async def v3_save_mapping(connection_id: str, payload: V3SheetMappingInput, _: V3UserOut = Depends(v3_require_roles("business_dev", "super_admin"))):
+    await v3_col("sheet_mappings").update_one(
+        {"connection_id": connection_id},
+        {"$set": {"connection_id": connection_id, "field_map": payload.field_map, "create_new_fields": payload.create_new_fields, "updated_at": now_iso()}},
+        upsert=True,
+    )
+    return {"message": "Mapping saved", "connection_id": connection_id}
+
+
+@v3_router.post("/sheets/connections/{connection_id}/sync")
+async def v3_sync_sheet(connection_id: str, payload: V3SheetSyncInput, _: V3UserOut = Depends(v3_require_roles("business_dev", "super_admin"))):
+    mapping = await v3_col("sheet_mappings").find_one({"connection_id": connection_id}, {"_id": 0})
+    if not mapping:
+        raise HTTPException(status_code=400, detail="Field mapping not configured")
+
+    imported = 0
+    skipped = 0
+    for tab in payload.tabs:
+        for row in tab.rows:
+            phone_key = mapping["field_map"].get("phone", "phone")
+            phone_val = (row.get(phone_key) or "").strip()
+            if not phone_val:
+                skipped += 1
+                continue
+            exists = await v3_col("leads").find_one({"phone": phone_val}, {"_id": 0})
+            if exists:
+                skipped += 1
+                continue
+
+            name_key = mapping["field_map"].get("name", "name")
+            email_key = mapping["field_map"].get("email", "email")
+            vertical_key = mapping["field_map"].get("vertical", "vertical")
+
+            extra_fields: Dict[str, str] = {}
+            if mapping.get("create_new_fields", True):
+                for key, value in row.items():
+                    if key not in [name_key, phone_key, email_key, vertical_key]:
+                        extra_fields[key] = value
+
+            lead = {
+                "id": str(uuid.uuid4()),
+                "name": row.get(name_key, "Unknown Lead"),
+                "phone": phone_val,
+                "email": row.get(email_key, ""),
+                "vertical": row.get(vertical_key, "offline_physiotherapy"),
+                "source_tab": tab.tab_name,
+                "source_type": "google_sheet",
+                "stage": "New Lead",
+                "branch_id": None,
+                "notes": "Imported from Google Sheet",
+                "extra_fields": extra_fields,
+                "created_at": now_iso(),
+                "updated_at": now_iso(),
+            }
+            await v3_col("leads").insert_one(lead.copy())
+            imported += 1
+
+    return {"imported": imported, "skipped": skipped, "connection_id": connection_id}
+
+
+@v3_router.get("/boards/master")
+async def v3_master_board(_: V3UserOut = Depends(v3_current_user)):
+    stage_counts = {}
+    for stage in V3_STAGES:
+        stage_counts[stage] = await v3_col("leads").count_documents({"stage": stage})
+    return {"stage_counts": stage_counts}
+
+
+@v3_router.get("/boards/branch/{branch_id}")
+async def v3_branch_board(branch_id: str, _: V3UserOut = Depends(v3_current_user)):
+    stage_counts = {}
+    for stage in V3_STAGES:
+        stage_counts[stage] = await v3_col("leads").count_documents({"stage": stage, "branch_id": branch_id})
+    return {"branch_id": branch_id, "stage_counts": stage_counts}
+
 # Include the router in the main app
 app.include_router(api_router)
 app.include_router(v2_router)
+app.include_router(v3_router)
 
 app.add_middleware(
     CORSMiddleware,
