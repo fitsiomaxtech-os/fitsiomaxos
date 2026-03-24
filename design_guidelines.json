@@ -1,202 +1,164 @@
 {
-  "design_system": {
-    "identity": {
-      "name": "PhysioFit CCRM",
-      "archetype": "The Performance Pro (Light Mode Variant)",
-      "tone": "Clinical Precision meets Athletic Energy",
-      "core_values": ["Trust", "Efficiency", "Movement", "Clarity"],
-      "theme_strategy": "Light Mode Primary. Clean white surfaces for data density, deep slate for navigation, vibrant accents for status."
+  "semantic_version": "1.0.0",
+  "design_philosophy": {
+    "name": "Fitsiomax Clinical Minimalist",
+    "core_values": [
+      "Clarity over Decoration",
+      "Trust through Consistency",
+      "Efficiency for Operations",
+      "Human-Centric Medical Aesthetics"
+    ],
+    "mood": "Professional, Sterile but welcoming, Efficient, Calm"
+  },
+  "typography": {
+    "font_family": {
+      "headings": "Manrope, sans-serif",
+      "body": "Inter, sans-serif",
+      "mono": "JetBrains Mono, monospace"
     },
-    "typography": {
-      "font_family": {
-        "heading": "Manrope, sans-serif",
-        "body": "Inter, sans-serif",
-        "mono": "JetBrains Mono, monospace"
-      },
-      "usage_rules": {
-        "headings": "font-heading font-bold tracking-tight text-slate-900. H1=text-4xl, H2=text-3xl.",
-        "subheadings": "font-heading font-medium text-slate-500 tracking-normal uppercase text-sm.",
-        "body": "font-body text-slate-600 leading-relaxed.",
-        "data_cells": "font-body text-sm font-medium text-slate-700."
-      },
-      "imports": [
-        "@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');"
-      ]
+    "scale": {
+      "h1": "text-4xl md:text-5xl font-bold tracking-tight",
+      "h2": "text-3xl font-semibold tracking-tight",
+      "h3": "text-2xl font-semibold tracking-tight",
+      "h4": "text-xl font-semibold",
+      "body_lg": "text-lg leading-relaxed",
+      "body_base": "text-base leading-relaxed text-slate-600",
+      "body_sm": "text-sm text-slate-500",
+      "caption": "text-xs text-slate-400 uppercase tracking-wider"
     },
-    "colors": {
-      "palette": {
-        "primary": {
-          "DEFAULT": "#0f172a",
-          "foreground": "#f8fafc",
-          "hover": "#1e293b"
-        },
-        "secondary": {
-          "DEFAULT": "#f1f5f9",
-          "foreground": "#0f172a"
-        },
-        "accent": {
-          "sales": "#f97316",
-          "health": "#10b981",
-          "admin": "#6366f1"
-        },
-        "background": {
-          "DEFAULT": "#ffffff",
-          "subtle": "#f8fafc",
-          "paper": "#ffffff"
-        },
-        "status": {
-          "success": "#10b981",
-          "warning": "#f59e0b",
-          "error": "#ef4444",
-          "info": "#3b82f6"
-        }
-      },
-      "tailwind_config_extension": {
-        "colors": {
-          "slate": {
-            "850": "#162032"
-          }
-        }
-      },
-      "forbidden_colors": [
-        "#1B93A4",
-        "#7351B7"
-      ]
+    "usage_rules": {
+      "headings": "Use Manrope for all headings. Keep them Dark Slate (slate-900).",
+      "body": "Use Inter for all interface text. Keep high contrast (slate-600+)."
+    }
+  },
+  "colors": {
+    "palette": {
+      "background": "#FFFFFF",
+      "background_subtle": "#F8FAFC",
+      "foreground": "#0F172A",
+      "primary": "#0EA5E9",
+      "primary_foreground": "#FFFFFF",
+      "secondary": "#F1F5F9",
+      "secondary_foreground": "#0F172A",
+      "muted": "#F1F5F9",
+      "muted_foreground": "#64748B",
+      "accent": "#F0F9FF",
+      "accent_foreground": "#0284C7",
+      "border": "#E2E8F0",
+      "input": "#E2E8F0",
+      "ring": "#0EA5E9"
     },
-    "layout": {
-      "grid_system": "Bento Grid Mode B (High Density)",
-      "spacing": {
-        "container_padding": "p-6 md:p-8",
-        "card_padding": "p-6",
-        "gap": "gap-6"
-      },
-      "radius": {
-        "default": "rounded-lg",
-        "button": "rounded-md",
-        "card": "rounded-xl"
-      },
-      "elevation": {
-        "card": "shadow-sm border border-slate-100",
-        "dropdown": "shadow-lg border border-slate-200",
-        "modal": "shadow-xl border border-slate-200"
-      }
+    "semantic_usage": {
+      "primary_action": "bg-primary hover:bg-primary/90 text-white shadow-sm",
+      "secondary_action": "bg-white border border-slate-200 hover:bg-slate-50 text-slate-900",
+      "destructive": "bg-red-50 text-red-600 hover:bg-red-100 border border-red-100",
+      "success": "text-emerald-600 bg-emerald-50 border-emerald-100",
+      "warning": "text-amber-600 bg-amber-50 border-amber-100"
+    }
+  },
+  "visual_enhancers": {
+    "radius": "rounded-lg",
+    "shadows": {
+      "card": "shadow-[0_1px_3px_0_rgb(0,0,0,0.05)]",
+      "dropdown": "shadow-[0_4px_6px_-1px_rgb(0,0,0,0.05),0_2px_4px_-2px_rgb(0,0,0,0.05)]",
+      "hover": "shadow-[0_10px_15px_-3px_rgb(0,0,0,0.05),0_4px_6px_-4px_rgb(0,0,0,0.05)]"
     },
-    "components": {
-      "buttons": {
-        "primary": "bg-primary text-primary-foreground hover:bg-slate-800 shadow-sm",
-        "secondary": "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50",
-        "ghost": "hover:bg-slate-100 text-slate-600"
-      },
-      "cards": {
-        "base": "bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden",
-        "metric": "p-6 flex flex-col justify-between h-full"
-      },
-      "inputs": {
-        "base": "h-10 rounded-md border-slate-200 focus:ring-2 focus:ring-primary/20 bg-white"
-      },
-      "badges": {
-        "base": "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-        "success": "bg-emerald-100 text-emerald-800",
-        "warning": "bg-amber-100 text-amber-800",
-        "slate": "bg-slate-100 text-slate-800"
-      }
+    "borders": "border border-slate-200",
+    "glass_effect": "bg-white/80 backdrop-blur-md border-white/20"
+  },
+  "layout": {
+    "spacing_scale": {
+      "section_gap": "gap-8 md:gap-12",
+      "card_padding": "p-6 md:p-8",
+      "container_padding": "px-4 md:px-8"
     },
-    "motion": {
-      "transition_base": "transition-all duration-200 ease-in-out",
-      "hover_lift": "hover:-translate-y-1 hover:shadow-md",
-      "page_enter": "animate-in fade-in slide-in-from-bottom-4 duration-500"
+    "grid_system": {
+      "dashboard": "grid grid-cols-1 md:grid-cols-12 gap-6",
+      "role_selection": "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+    }
+  },
+  "component_guidelines": {
+    "buttons": {
+      "default": "h-10 px-4 py-2 rounded-md font-medium transition-all active:scale-95",
+      "primary": "bg-sky-500 text-white hover:bg-sky-600 shadow-sm",
+      "outline": "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+    },
+    "cards": {
+      "style": "bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md",
+      "header": "p-6 border-b border-slate-100"
+    },
+    "inputs": {
+      "style": "h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
     }
   },
   "assets": {
     "images": {
-      "login_hero": {
-        "url": "https://images.unsplash.com/photo-1764314138160-5f04f4a50dae?crop=entropy&cs=srgb&fm=jpg&q=85",
-        "alt": "Physiotherapy session in clinic"
+      "login_background": {
+        "url": "https://images.pexels.com/photos/62693/pexels-photo-62693.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "alt": "Minimalist light and shadow background",
+        "usage": "Use as a full-screen background for the login page with a white/90 overlay or blur."
       },
-      "dashboard_context": {
-        "url": "https://images.unsplash.com/photo-1761971975769-97e598bf526b?crop=entropy&cs=srgb&fm=jpg&q=85",
-        "alt": "Modern gym interior with equipment"
+      "role_header_abstract": {
+        "url": "https://images.unsplash.com/photo-1764347605851-8fbd7850c945",
+        "alt": "Abstract blue waves",
+        "usage": "Optional subtle header background for the role selection screen."
       },
-      "map_placeholder": {
-        "url": "https://images.unsplash.com/photo-1717700299581-c2fc3fad4ee8?crop=entropy&cs=srgb&fm=jpg&q=85",
-        "alt": "Abstract city map for branches"
-      },
-      "avatars": [
-        {
-          "role": "physio",
-          "url": "https://images.unsplash.com/photo-1750175614279-2f417fbe0722?crop=entropy&cs=srgb&fm=jpg&q=85",
-          "alt": "Smiling physiotherapist"
-        },
-        {
-          "role": "trainer",
-          "url": "https://images.unsplash.com/photo-1628935291759-bbaf33a66dc6?crop=entropy&cs=srgb&fm=jpg&q=85",
-          "alt": "Fitness trainer in gym"
-        }
-      ]
+       "physio_context": {
+        "url": "https://images.pexels.com/photos/8437039/pexels-photo-8437039.jpeg",
+        "alt": "Physiotherapy context",
+        "usage": "Use if a split-screen login layout is chosen, on the side panel."
+      }
     },
     "icons": {
       "library": "lucide-react",
-      "style": "stroke-width={1.5} size={20}"
+      "role_icons": {
+        "Super Admin": "ShieldCheck",
+        "Business Dev": "Briefcase",
+        "Pre-sales": "Headphones",
+        "Branch Admin": "Building2",
+        "Head Physio": "Stethoscope",
+        "Physio": "Activity"
+      }
     }
   },
-  "page_strategies": {
-    "login": {
-      "layout": "Split Screen. Left: Branding + Form (White). Right: Hero Image (Physio/Gym) with overlay.",
-      "elements": "Logo, Role Selector (Tabs: Admin, Sales, Pre-sales), 'Welcome Back' header."
+  "motion": {
+    "page_transition": {
+      "initial": { "opacity": 0, "y": 10 },
+      "animate": { "opacity": 1, "y": 0 },
+      "exit": { "opacity": 0, "y": -10 },
+      "transition": { "duration": 0.3, "ease": "easeOut" }
     },
-    "super_admin_dashboard": {
-      "layout": "Bento Grid (High Density).",
-      "sections": [
-        "Header: Global Filters (Date, Branch).",
-        "Top Row: 4x KPI Cards (Total Leads, Conversion Rate, Revenue, Active Packages).",
-        "Main: Sales Trend Chart (Line) + Branch Performance (Bar).",
-        "Sidebar: Integration Status (Google Sheets Connected/Disconnected)."
-      ]
-    },
-    "leads_management": {
-      "layout": "Header with View Toggle (List/Kanban).",
-      "list_view": "Shadcn Table with sorting/filtering. Columns: Name, Source, Status, Last Contact, Assigned To.",
-      "kanban_view": "Horizontal scrollable columns. Drag & Drop. Columns: New, Contacted, Appointment Booked, Visited, Converted, Lost.",
-      "actions": "Quick Add Lead, Import from Sheets."
-    },
-    "appointment_booking": {
-      "layout": "Two Column. Left: Calendar (Month/Week). Right: Slot Selection + Patient Details Form.",
-      "features": "Color-coded slots by doctor/trainer availability. Consultation fee input."
-    }
+    "hover_card": "hover:-translate-y-1 hover:shadow-md transition-all duration-300"
   },
-  "implementation_rules": {
-    "general": [
-      "Use 'sonner' for all toast notifications.",
-      "ALL interactive elements must have 'data-testid'.",
-      "Do NOT use gradients for backgrounds, only for subtle button hovers or accents.",
-      "Ensure all text has sufficient contrast (APCA standards).",
-      "Use 'lucide-react' for icons."
-    ],
-    "charts": {
-      "library": "recharts (via shadcn/charts)",
-      "style": "Minimalist. Remove grid lines if possible. Use 'primary' color for main data, 'accent' for secondary."
-    },
-    "google_sheets": {
-      "ui_pattern": "Integration Card. Show 'Connected' with Green Dot. 'Last Sync: 5 mins ago'. Button: 'Map Columns' triggering a Dialog."
-    }
+  "accessibility": {
+    "contrast": "Ensure all text meets WCAG AA standards. Slate-500 on white is borderline; prefer Slate-600.",
+    "focus_states": "All interactive elements must have a visible focus ring (sky-500).",
+    "aria": "Use proper ARIA labels for icon-only buttons."
   },
-  "universal_guidelines": [
-    "You tend to converge toward generic, 'on distribution' outputs. In frontend design, this creates what users call the 'AI slop' aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight.",
-    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+  "instructions_to_main_agent": [
+    "1. START WITH SCREEN 1: LOGIN. Build a clean, centered login card.",
+    "2. BACKGROUND: Use the 'login_background' image with a heavy white overlay (bg-white/90) or blur to ensure text readability. The goal is 'atmosphere', not 'distraction'.",
+    "3. BRANDING: Use the 'Fitsiomax OS' logo text in Manrope Bold, Slate-900. No complex logo image needed yet.",
+    "4. ROLE ACCESS: After login, show the 'Role Selection' screen. This should be a GRID of cards. One card for each role (Super Admin, Business Dev, Pre-sales, Branch Admin, Head Physio, Physio).",
+    "5. ROLE CARDS: Each card must have an Icon (Lucide), Title, and a 1-sentence description. Make them clickable.",
+    "6. GOOGLE SHEETS MOCK: Since OAuth is next step, just create a JSON object in the code to simulate the 'leads' data structure. No real API call yet.",
+    "7. TEST IDS: Add data-testid to every input, button, and role card.",
+    "8. THEME: FORCE LIGHT MODE. Do not add a toggle. The user requested 'mostly white'.",
+    "9. MINIMALISM: Avoid gradients. Use solid colors and subtle borders."
+  ],
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
+    "You tend to converge toward generic, 'on distribution' outputs. Avoid this.",
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
     "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
-    "Create depth through layered design elements with z-index hierarchy",
-    "Use glass-morphism effects with backdrop filters (12-24px blur)",
-    "You MUST NOT apply universal transition. Eg: 'transition: all'. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms",
-    "You MUST NOT center align the app container, ie do not add '.App { text-align: center; }' in the css file. This disrupts the human natural reading flow of text",
-    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style",
-    "NEVER: use AI assistant Emoji characters like 🤖🧠💭💡 etc for icons.",
-    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead.",
-    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
-    "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.",
-    "Main agent relies on these image URLs. Missing categories (especially sponsor logos) = main agent will use placeholder text which is FORBIDDEN",
-    "Prioritize using pre-existing components from src/components/ui when applicable",
-    "Components MUST use named exports (export const ComponentName = ...)",
-    "Pages MUST use default exports (export default function PageName() {...})",
-    "Use 'sonner' for toasts. Located in '/app/frontend/src/components/ui/sonner.tsx'"
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur).",
+    "You MUST NOT apply universal transition. Eg: transition: all. This results in breaking transforms.",
+    "You MUST NOT center align the app container, ie do not add .App { text-align: center; } in the css file.",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations.",
+    "NEVER: use AI assistant Emoji characters like 🤖 etc.",
+    "Every interaction needs micro-animations - hover states, transitions.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Subtle grain textures, noise overlays, custom cursors, selection states.",
+    "Export Components: Named exports. Pages: Default exports."
   ]
 }
