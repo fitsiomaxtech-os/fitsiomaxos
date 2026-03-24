@@ -7,11 +7,13 @@ import {
   Phone,
   Mail,
   Search,
+  Stethoscope,
   User,
   UserPlus,
   X,
   Activity,
   RefreshCw,
+  LayoutDashboard,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,6 +31,7 @@ import {
   getLeadRemarks,
   moveBranchStage,
 } from "@/lib/api";
+import { HeadPhysioCalendar } from "@/components/HeadPhysioCalendar";
 
 const BRANCH_STAGES = [
   "New Appointment",
@@ -57,6 +60,7 @@ export const BranchAdminBoard = ({ branchId }) => {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLead, setSelectedLead] = useState(null);
+  const [activeView, setActiveView] = useState("pipeline");
 
   const loadBoard = useCallback(async () => {
     if (!branchId) return;
@@ -88,9 +92,40 @@ export const BranchAdminBoard = ({ branchId }) => {
     }
   };
 
+  const VIEW_TABS = [
+    { key: "pipeline", label: "Patient Pipeline", icon: LayoutDashboard },
+    { key: "head_physio", label: "Head Physio Calendar", icon: Stethoscope },
+  ];
+
   return (
     <div className="space-y-4" data-testid="branch-admin-board-root">
-      {/* Metric Strip */}
+      {/* View Tabs */}
+      <div className="flex items-center gap-1 border-b border-slate-200 pb-0" data-testid="branch-view-tabs">
+        {VIEW_TABS.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveView(tab.key)}
+              className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+                activeView === tab.key
+                  ? "border-sky-500 text-sky-700"
+                  : "border-transparent text-slate-400 hover:text-slate-600"
+              }`}
+              data-testid={`branch-view-tab-${tab.key}`}
+            >
+              <Icon className="h-4 w-4" /> {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {activeView === "head_physio" ? (
+        <HeadPhysioCalendar branchId={branchId} />
+      ) : (
+        <>
+          {/* Metric Strip */}
       <div className="flex gap-2 overflow-x-auto pb-1" data-testid="branch-metrics">
         <div className="flex-shrink-0 rounded-lg border border-sky-200 bg-sky-50 px-4 py-2" data-testid="branch-metric-total">
           <p className="text-[10px] font-medium text-slate-500">Total</p>
@@ -175,6 +210,8 @@ export const BranchAdminBoard = ({ branchId }) => {
           onUpdate={handleStageUpdate}
           reloadBoard={loadBoard}
         />
+      )}
+        </>
       )}
 
       {loading && (
