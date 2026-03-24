@@ -1631,6 +1631,22 @@ class V3AppointmentOut(BaseModel):
     created_at: str
 
 
+class V3TeamMemberCreate(BaseModel):
+    full_name: str
+    email: str
+    team_type: Literal["pre_sales", "sales"]
+
+
+class V3TeamMemberOut(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    full_name: str
+    email: str
+    team_type: str
+    created_at: str
+
+
 class V3SheetConnectionCreate(BaseModel):
     connection_name: str
     spreadsheet_id: str
@@ -1715,6 +1731,25 @@ async def v3_seed() -> None:
             {"$set": {"branch_id": first_branch["id"]}},
         )
 
+    if await v3_col("team_members").count_documents({}) == 0:
+        seed_team = [
+            {
+                "id": str(uuid.uuid4()),
+                "full_name": "Karthik Reddy",
+                "email": "presales@constructions.com",
+                "team_type": "pre_sales",
+                "created_at": now_iso(),
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "full_name": "Divya Pillai",
+                "email": "sales@constructions.com",
+                "team_type": "sales",
+                "created_at": now_iso(),
+            },
+        ]
+        await v3_col("team_members").insert_many([item.copy() for item in seed_team])
+
 
 @app.on_event("startup")
 async def v3_startup_seed():
@@ -1789,6 +1824,33 @@ async def v3_add_vertical(payload: V3VerticalCreate, _: V3UserOut = Depends(v3_r
 async def v3_get_branches(_: V3UserOut = Depends(v3_current_user)):
     rows = await v3_col("branches").find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return [V3BranchOut(**row) for row in rows]
+
+
+@v3_router.get("/team-members", response_model=List[V3TeamMemberOut])
+async def v3_get_team_members(team_type: Optional[str] = None, _: V3UserOut = Depends(v3_current_user)):
+    query: Dict[str, str] = {}
+    if team_type:
+        query["team_type"] = team_type
+    rows = await v3_col("team_members").find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [V3TeamMemberOut(**row) for row in rows]
+
+
+@v3_router.post("/team-members", response_model=V3TeamMemberOut)
+async def v3_add_team_member(payload: V3TeamMemberCreate, _: V3UserOut = Depends(v3_require_roles("business_dev", "super_admin"))):
+    email = payload.email.lower().strip()
+    exists = await v3_col("team_members").find_one({"email": email, "team_type": payload.team_type}, {"_id": 0})
+    if exists:
+        raise HTTPException(status_code=409, detail="Team member already exists")
+
+    member = {
+        "id": str(uuid.uuid4()),
+        "full_name": payload.full_name.strip(),
+        "email": email,
+        "team_type": payload.team_type,
+        "created_at": now_iso(),
+    }
+    await v3_col("team_members").insert_one(member.copy())
+    return V3TeamMemberOut(**member)
 
 
 @v3_router.post("/branches", response_model=V3BranchOut)

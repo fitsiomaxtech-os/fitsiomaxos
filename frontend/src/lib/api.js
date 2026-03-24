@@ -77,3 +77,6 @@ export const syncSheetConnection = async (connectionId, payload) =>
 
 export const getMasterBoard = async () => (await api.get("/boards/master")).data;
 export const getBranchBoard = async (branchId) => (await api.get(`/boards/branch/${branchId}`)).data;
+
+export const getTeamMembers = async (params) => (await api.get("/team-members", { params })).data;
+export const addTeamMember = async (payload) => (await api.post("/team-members", payload)).data;
