@@ -595,16 +595,15 @@ export const CRMPage = ({ auth, onLogout }) => {
                 <p className="text-sm font-bold tracking-wide text-white" data-testid="role-board-brand-subtitle">
                   FitsiomaxOS
                 </p>
-                <h1 className="font-heading text-2xl font-bold text-white/90" data-testid="role-board-title">
+                <h1 className="text-lg font-semibold text-white/90" data-testid="role-board-title">
                   {boardTitle}
                 </h1>
+                <p className="text-sm text-sky-100" data-testid="role-board-user-greeting">
+                  Hi {auth.user.full_name?.split(" ")[0]}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-sm" data-testid="role-board-greeting">
-                <UserRound className="h-5 w-5 text-white" />
-                <span className="text-sm font-medium text-white" data-testid="role-board-user-greeting">Hi {auth.user.full_name?.split(" ")[0]}</span>
-              </div>
               <Button
                 variant="outline"
                 className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
