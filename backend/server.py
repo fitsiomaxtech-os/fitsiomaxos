@@ -1468,6 +1468,17 @@ V3_STAGES = [
     "Completed",
 ]
 
+V3_BRANCH_STAGES = [
+    "New Appointment",
+    "Call & Confirm",
+    "Head Physio Appointment",
+    "Consultation Fee Collected",
+    "Consultation Done",
+    "Follow-up Package Upsell",
+    "Package Paid",
+    "Jr. Physio Assigned",
+]
+
 
 def v3_col(name: str):
     return db[f"fitsiomax_v3_{name}"]
@@ -1600,9 +1611,15 @@ class V3LeadOut(BaseModel):
     source_tab: Optional[str] = None
     source_type: str
     stage: str
+    branch_stage: Optional[str] = None
     branch_id: Optional[str] = None
     notes: Optional[str] = ""
     extra_fields: Dict[str, str]
+    consultation_fee: Optional[float] = None
+    package_amount: Optional[float] = None
+    package_weeks: Optional[int] = None
+    assigned_physio_id: Optional[str] = None
+    assigned_physio_name: Optional[str] = None
     created_at: str
     updated_at: str
 
@@ -2069,7 +2086,7 @@ async def v3_qualify_lead(lead_id: str, _: V3UserOut = Depends(v3_require_roles(
 async def v3_assign_branch(lead_id: str, payload: V3AssignBranchInput, _: V3UserOut = Depends(v3_require_roles("pre_sales", "business_dev", "super_admin"))):
     await v3_col("leads").update_one(
         {"id": lead_id},
-        {"$set": {"branch_id": payload.branch_id, "stage": "Assigned to Branch", "updated_at": now_iso()}},
+        {"$set": {"branch_id": payload.branch_id, "stage": "Assigned to Branch", "branch_stage": "New Appointment", "updated_at": now_iso()}},
     )
     lead = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
     if not lead:
@@ -2244,6 +2261,110 @@ async def v3_move_stage(lead_id: str, payload: V3MoveStageInput, user: V3UserOut
         "lead_id": lead_id,
         "action": "stage_change",
         "details": f"Moved from '{old_stage}' to '{payload.stage}'",
+        "created_by": user.full_name,
+        "created_by_role": user.role,
+        "created_at": now_iso(),
+    }
+    await v3_col("lead_activity").insert_one(activity.copy())
+    updated = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
+    return V3LeadOut(**updated)
+
+
+# ─── Branch Admin Pipeline Endpoints ───
+
+class V3BranchStageInput(BaseModel):
+    branch_stage: str
+
+class V3CollectFeeInput(BaseModel):
+    fee_type: Literal["consultation", "package"]
+    amount: float
+    package_weeks: Optional[int] = None
+
+class V3AssignPhysioInput(BaseModel):
+    physio_id: str
+
+
+@v3_router.get("/branch-board/{branch_id}")
+async def v3_branch_board_new(branch_id: str, _: V3UserOut = Depends(v3_require_roles("branch_admin", "super_admin", "business_dev"))):
+    leads = await v3_col("leads").find({"branch_id": branch_id}, {"_id": 0}).sort("updated_at", -1).to_list(1000)
+    stage_counts = {}
+    for stage in V3_BRANCH_STAGES:
+        stage_counts[stage] = sum(1 for lead in leads if lead.get("branch_stage") == stage)
+    lead_list = [V3LeadOut(**lead) for lead in leads]
+    return {"leads": [lead.model_dump() for lead in lead_list], "stage_counts": stage_counts}
+
+
+@v3_router.post("/leads/{lead_id}/branch-stage")
+async def v3_move_branch_stage(lead_id: str, payload: V3BranchStageInput, user: V3UserOut = Depends(v3_require_roles("branch_admin", "super_admin"))):
+    if payload.branch_stage not in V3_BRANCH_STAGES:
+        raise HTTPException(status_code=400, detail="Invalid branch stage")
+    lead = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    old_stage = lead.get("branch_stage", "Unknown")
+    await v3_col("leads").update_one({"id": lead_id}, {"$set": {"branch_stage": payload.branch_stage, "updated_at": now_iso()}})
+    activity = {
+        "id": str(uuid.uuid4()),
+        "lead_id": lead_id,
+        "action": "branch_stage_change",
+        "details": f"Branch stage: '{old_stage}' -> '{payload.branch_stage}'",
+        "created_by": user.full_name,
+        "created_by_role": user.role,
+        "created_at": now_iso(),
+    }
+    await v3_col("lead_activity").insert_one(activity.copy())
+    updated = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
+    return V3LeadOut(**updated)
+
+
+@v3_router.post("/leads/{lead_id}/collect-fee")
+async def v3_collect_fee(lead_id: str, payload: V3CollectFeeInput, user: V3UserOut = Depends(v3_require_roles("branch_admin", "super_admin"))):
+    lead = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    updates = {"updated_at": now_iso()}
+    if payload.fee_type == "consultation":
+        updates["consultation_fee"] = payload.amount
+        updates["branch_stage"] = "Consultation Fee Collected"
+    elif payload.fee_type == "package":
+        updates["package_amount"] = payload.amount
+        if payload.package_weeks:
+            updates["package_weeks"] = payload.package_weeks
+        updates["branch_stage"] = "Package Paid"
+    await v3_col("leads").update_one({"id": lead_id}, {"$set": updates})
+    activity = {
+        "id": str(uuid.uuid4()),
+        "lead_id": lead_id,
+        "action": "fee_collected",
+        "details": f"{payload.fee_type.title()} fee collected: Rs.{payload.amount}" + (f" ({payload.package_weeks} weeks)" if payload.package_weeks else ""),
+        "created_by": user.full_name,
+        "created_by_role": user.role,
+        "created_at": now_iso(),
+    }
+    await v3_col("lead_activity").insert_one(activity.copy())
+    updated = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
+    return V3LeadOut(**updated)
+
+
+@v3_router.post("/leads/{lead_id}/assign-physio")
+async def v3_assign_physio(lead_id: str, payload: V3AssignPhysioInput, user: V3UserOut = Depends(v3_require_roles("branch_admin", "super_admin"))):
+    lead = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    physio = await v3_col("doctors").find_one({"id": payload.physio_id}, {"_id": 0})
+    if not physio:
+        raise HTTPException(status_code=404, detail="Physio not found")
+    await v3_col("leads").update_one({"id": lead_id}, {"$set": {
+        "assigned_physio_id": payload.physio_id,
+        "assigned_physio_name": physio["full_name"],
+        "branch_stage": "Jr. Physio Assigned",
+        "updated_at": now_iso(),
+    }})
+    activity = {
+        "id": str(uuid.uuid4()),
+        "lead_id": lead_id,
+        "action": "physio_assigned",
+        "details": f"Jr. Physio assigned: {physio['full_name']}",
         "created_by": user.full_name,
         "created_by_role": user.role,
         "created_at": now_iso(),

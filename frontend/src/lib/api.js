@@ -78,7 +78,7 @@ export const syncSheetConnection = async (connectionId, payload) =>
   (await api.post(`/sheets/connections/${connectionId}/sync`, payload)).data;
 
 export const getMasterBoard = async () => (await api.get("/boards/master")).data;
-export const getBranchBoard = async (branchId) => (await api.get(`/boards/branch/${branchId}`)).data;
+export const getBranchBoardOld = async (branchId) => (await api.get(`/boards/branch/${branchId}`)).data;
 
 export const getTeamMembers = async (params) => (await api.get("/team-members", { params })).data;
 export const addTeamMember = async (payload) => (await api.post("/team-members", payload)).data;
@@ -94,3 +94,8 @@ export const completeLeadFollowUp = async (leadId, followupId) => (await api.pos
 export const getLeadActivity = async (leadId) => (await api.get(`/leads/${leadId}/activity`)).data;
 export const moveLeadStage = async (leadId, payload) => (await api.post(`/leads/${leadId}/move-stage`, payload)).data;
 export const bookAppointment = async (leadId, payload) => (await api.post(`/leads/${leadId}/book-appointment`, payload)).data;
+
+export const getBranchBoard = async (branchId) => (await api.get(`/branch-board/${branchId}`)).data;
+export const moveBranchStage = async (leadId, payload) => (await api.post(`/leads/${leadId}/branch-stage`, payload)).data;
+export const collectFee = async (leadId, payload) => (await api.post(`/leads/${leadId}/collect-fee`, payload)).data;
+export const assignPhysio = async (leadId, payload) => (await api.post(`/leads/${leadId}/assign-physio`, payload)).data;
