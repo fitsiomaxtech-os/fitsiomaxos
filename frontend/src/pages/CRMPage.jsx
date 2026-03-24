@@ -870,7 +870,7 @@ export const CRMPage = ({ auth, onLogout }) => {
           </div>
         )}
 
-        {!showBusinessDevBoard && (
+        {!showBusinessDevBoard && !showPreSalesBoard && (
           <Card className="border-slate-200 bg-white" data-testid="mock-preview-card">
             <CardHeader>
               <CardTitle className="text-base">Live Lead Source Preview (Instagram / Meta / Walkins)</CardTitle>
