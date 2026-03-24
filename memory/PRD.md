@@ -37,29 +37,51 @@ Build FITSIOMAX OS with:
 - Added mock JSON block to preview next-phase Google Sheet lead structure.
 - Added complete `data-testid` coverage for Screen 1 UI interactions.
 
+### Role-Wise Admin Boards Complete
+- Built separate role-based boards for all 6 users using real backend data:
+  - Super Admin board
+  - Business Development board
+  - Pre-sales board
+  - Branch Admin board
+  - Head Physio board
+  - Physio board
+- Implemented flow actions by role:
+  - Pre-sales: qualify + assign branch
+  - Branch Admin: confirm + check available doctors + book appointment
+  - Head Physio/Physio: today/new appointments + complete
+- Added Business Dev sheet connection + field mapping + sync controls in board.
+- Added Super Admin modules for vertical and branch setup in board.
+- Replaced mocked lead preview with live lead-source preview from backend leads.
+
+### Post-QA Fixes Applied
+- Fixed default seeded `branchadmin@fitsiomax.com` branch linkage (non-null branch_id).
+- Fixed `/api/v3/leads/{lead_id}/confirm` to enforce scoped update result and return 403/404 correctly.
+- Replaced hardcoded sheet callback URL with env-driven callback value.
+- Added slot normalization and verified branch-admin confirm→book path.
+
 ## Validation Notes
-- Backend role login tested for all 6 credentials (pass).
-- Frontend screenshot tests passed for login + role grid.
-- Testing agent iteration 7:
-  - Backend: 14/14 pass
-  - Frontend: all requested Screen 1 checks pass
-  - No blocking issues in Screen 1 scope
+- Screen 1 testing (iteration 7): pass for login + role access.
+- Role board testing (iteration 8): issues found and fixed.
+- Retest (iteration 9): all targeted backend/frontend checks passed; no blocking issues.
+- Backend regression files created by testing agent:
+  - `/app/backend/tests/test_fitsiomax_v3_seeded_role_integrity.py`
+  - `/app/backend/tests/test_fitsiomax_v3_iteration9_retest.py`
 
 ## Prioritized Backlog (Next Screens)
 ### P0
-- Screen 2: Business Development Google Sheets connector UI (connection + mapping + sync simulation)
-- Screen 3: Lead Master board with stage movement
+- Connect real Google OAuth credentials for live Sheets token flow (currently env-ready connector).
+- Add scheduler for automatic periodic multi-sheet sync.
 
 ### P1
-- Pre-sales qualification and branch assignment screen
-- Branch admin board and confirmation screen
+- Strengthen branch scoping for all non-admin roles (strict backend guards).
+- Add branch-level filters and summary widgets for daily team tracking.
 
 ### P2
-- Doctor availability booking screen
-- Head physio today/new appointment board
+- Add calendar month/week view with slot drag-reschedule.
+- Add notification hooks for appointment reminders.
 
 ## Next Tasks List
-1. Build **Screen 2**: Google Sheets connection manager (UI + mapping + sync simulation).
-2. Add dynamic field mapping UI (create new lead fields from headers).
-3. Add tab/source preview and imported lead counters.
+1. Build next screen: **Live Google OAuth connect + token status** for Business Dev.
+2. Add auto-sync job settings (every N minutes) for connected sheets.
+3. Add branch analytics cards (new, confirmed, booked, completed per branch).
 
