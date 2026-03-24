@@ -1,0 +1,75 @@
+{
+  "summary": "Validated FITSIOMAX v3 role boards on public URL with backend+UI testing. Role board loading works for all 6 credentials, but default branch admin seed user is not branch-linked, causing booking workflow failure in role-based UI action flow.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "/api/v3/auth/login (seeded user branchadmin@fitsiomax.com)",
+        "issue": "Default branch admin user logs in with branch_id=null; branch-scoped workflows cannot reliably operate with required credential set.",
+        "priority": "CRITICAL"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "/api/v3/leads/{lead_id}/confirm",
+        "issue": "For branch_admin, update uses branch_id filter but response re-reads by id regardless of matched_count; can return 200 with unchanged stage when update did not apply."
+      },
+      {
+        "endpoint": "/api/v3/sheets/connections",
+        "issue": "callback_url is hardcoded to preview domain in backend instead of environment-driven configuration."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Branch Admin booking flow",
+        "issue": "Using default branch admin credential, Check Available returns no doctors in tested workflow and blocks booking completion path.",
+        "selector": "[data-testid='branch-check-doctors-button']",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Pre-sales qualify+assign -> Branch Admin confirm+book",
+        "issue": "Flow breaks at booking stage for default branchadmin credential due to missing branch-linked context and no available-doctor options for selected slot.",
+        "affected_selectors": [
+          "[data-testid='branch-booking-lead-select']",
+          "[data-testid='branch-available-doctor-select']"
+        ]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_fitsiomax_v3_api.py",
+    "/app/backend/tests/test_fitsiomax_v3_role_visibility.py",
+    "/app/backend/tests/test_screen1_role_access.py",
+    "/app/backend/tests/test_fitsiomax_v3_seeded_role_integrity.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Fix v3_seed so default branchadmin@fitsiomax.com receives a valid branch_id (similar to headphysio/physio assignment).",
+    "In /api/v3/leads/{lead_id}/confirm, validate matched_count and return proper 404/403 when scoped update does not apply.",
+    "Replace hardcoded sheets callback URL with env-based value.",
+    "After fixes, rerun branch admin UI action flow: confirm -> check available doctors -> book appointment with default credential set."
+  ],
+  "critical_code_review_comments": [
+    "backend/server.py remains a very large multi-domain file (>2000 lines), increasing regression risk; split by v1/v2/v3 routers/services.",
+    "Seed/user integrity issue: branch admin default account is not mapped to a branch while role workflows expect branch scope.",
+    "MOCKED: Lead Source Preview card is using getRoleSelectionMock helper, not live backend source-tab data."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_fitsiomax_v3_api.py",
+    "/app/backend/tests/test_fitsiomax_v3_seeded_role_integrity.py",
+    "/app/test_reports/iteration_8.json"
+  ],
+  "success_rate": {
+    "backend": "96.7% (29/30)",
+    "frontend": "75% (role board load/visibility passed; one critical branch-admin booking action flow failed)"
+  },
+  "seed_data_creation": "Created UI test leads during role-action checks via Pre-sales flow.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Role board rendering is stable for all six logins and no irrelevant failed sheets API calls were observed on non-sheet roles. Use default branchadmin credential to verify branch-linked action path after seed fix. Also verify confirm endpoint does not return success when no scoped update occurred.",
+  "rca of the issue": "Root cause: v3_seed inserts branchadmin@fitsiomax.com with branch_id=None and only auto-links headphysio/physio to first branch. This leaves required default branch admin without branch context. Reproduction: login as branchadmin@fitsiomax.com -> inspect user.branch_id (null) -> role booking flow often cannot resolve available doctor path for branch-specific lead progression. Mitigation: assign/repair default branch_admin branch_id at seed/migration time and enforce scoped-update validation in confirm API."
+}

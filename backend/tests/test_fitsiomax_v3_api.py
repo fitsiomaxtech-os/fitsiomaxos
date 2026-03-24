@@ -12,7 +12,8 @@ BASE_URL = os.environ.get("REACT_APP_BACKEND_URL")
 
 
 def _iso_future(minutes: int) -> str:
-    return (datetime.now(timezone.utc) + timedelta(minutes=minutes)).replace(microsecond=0).isoformat()
+    # Match UI datetime-local style (YYYY-MM-DDTHH:MM) used by v3 slot normalization
+    return (datetime.now(timezone.utc) + timedelta(minutes=minutes)).strftime("%Y-%m-%dT%H:%M")
 
 
 @pytest.fixture(scope="session")

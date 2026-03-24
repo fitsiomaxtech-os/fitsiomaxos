@@ -45,3 +45,34 @@ export const getRoleSelectionMock = async () => {
     ],
   };
 };
+
+export const getVerticals = async () => (await api.get("/verticals")).data;
+export const createVertical = async (payload) => (await api.post("/verticals", payload)).data;
+
+export const getBranches = async () => (await api.get("/branches")).data;
+export const createBranch = async (payload) => (await api.post("/branches", payload)).data;
+
+export const getDoctors = async (params) => (await api.get("/doctors", { params })).data;
+export const createDoctor = async (payload) => (await api.post("/doctors", payload)).data;
+export const addDoctorSlots = async (doctorId, payload) => (await api.post(`/doctors/${doctorId}/slots`, payload)).data;
+export const getAvailableDoctors = async (params) => (await api.get("/doctors/available", { params })).data;
+
+export const getLeads = async (params) => (await api.get("/leads", { params })).data;
+export const createManualLead = async (payload) => (await api.post("/leads/manual", payload)).data;
+export const qualifyLead = async (leadId) => (await api.post(`/leads/${leadId}/qualify`)).data;
+export const assignLeadBranch = async (leadId, payload) => (await api.post(`/leads/${leadId}/assign-branch`, payload)).data;
+export const confirmLead = async (leadId) => (await api.post(`/leads/${leadId}/confirm`)).data;
+export const bookLeadAppointment = async (leadId, payload) => (await api.post(`/leads/${leadId}/book-appointment`, payload)).data;
+
+export const getAppointments = async (params) => (await api.get("/appointments", { params })).data;
+export const completeAppointment = async (appointmentId) => (await api.post(`/appointments/${appointmentId}/complete`)).data;
+
+export const createSheetConnection = async (payload) => (await api.post("/sheets/connections", payload)).data;
+export const getSheetConnections = async () => (await api.get("/sheets/connections")).data;
+export const saveSheetMapping = async (connectionId, payload) =>
+  (await api.post(`/sheets/connections/${connectionId}/mapping`, payload)).data;
+export const syncSheetConnection = async (connectionId, payload) =>
+  (await api.post(`/sheets/connections/${connectionId}/sync`, payload)).data;
+
+export const getMasterBoard = async () => (await api.get("/boards/master")).data;
+export const getBranchBoard = async (branchId) => (await api.get(`/boards/branch/${branchId}`)).data;
