@@ -1,112 +1,139 @@
-# FITSIOMAX Appointment Book System PRD
+# FITSIOMAX OS PRD (Current)
 
-## Original Problem Statement (Latest)
-Rebuild from scratch and build one-by-one:
-- Appointment Book System for **FITSIOMAX**
-- Brand-focused CRM View with blue/black aesthetic UI
-- Business offerings:
-  - Online: Fitness Programs, Physio Therapy
-  - Offline: 4 locations (Anna Nagar, T Nagar, Parrys, ECR)
-  - Offline Fitness GYM
-- Login roles required:
-  1. Online Fitness
-  2. Physio Therapy Online
-  3. Offline Physio Therapy
-  + Super Admin (user confirmed)
-- Lead source: Google Sheet (CSV/manual first) + manual new lead
-- Flow: lead routing by source/category → doctor calendar visibility → slot booking
-- Super Admin only can create services (+ New Service)
+## Original Problem Statement (Current Phase)
+Build **Fitsiomax OS** with full operations flow:
+- Business Development role can connect/manage multiple Google Sheets.
+- Import all leads from sheets to CRM automatically.
+- Map sheet headers to lead fields (or create new fields dynamically).
+- Each sheet tab acts as lead source (Instagram, Meta, Walkins, etc.).
+- Business verticals:
+  - Offline Physiotherapy
+  - Online Physiotherapy
+  - Online Fitness
+  - Offline Fitness with GYM
+- Branch hierarchy (phase-first on Offline Physiotherapy):
+  - Business Admin can create multiple branches.
+  - Each branch has own board.
+  - Branch has admin credentials/details.
+- Physio hierarchy:
+  - Head Physio profile + Physio profiles per branch.
+  - Head physio calendar and appointments.
+- Lead workflow:
+  - Lead from sheets → Pre-sales → assigned to branch → branch confirms → appointment booking with available doctors only → head physio sees today/new appointments.
 
-## User Choices Confirmed
-1. **Reset Scope**: Full rebuild from scratch.
-2. **Logins**: 3 role logins + Super Admin.
-3. **Lead Source**: CSV/manual first + manual appointment and manual lead.
-4. **Doctor Calendar**: Internal calendar with doctor slots and booking.
-5. **Service Creation**: Super Admin only.
+## Confirmed User Choices
+1. Rebuild from scratch (again) — **YES**.
+2. Roles: **Super Admin, Business Development, Pre-sales, Branch Admin, Head Physio, Physio**.
+3. Google Sheets auth: **OAuth architecture now with placeholder creds**, and manual lead creation enabled.
+4. Pipeline fixed:
+   - New Lead → Pre-sales Qualified → Assigned to Branch → Branch Confirmed → Appointment Booked → Completed
+5. Branch rollout: **Phase-wise** (Offline Physio first, others architecture-ready).
 
 ## User Personas
-- **Super Admin**: controls services, doctors, slots, import, and global overview.
-- **Online Fitness Coordinator**: handles online fitness leads + booking.
-- **Online Physio Coordinator**: handles online physiotherapy leads + booking.
-- **Offline Physio Coordinator**: handles offline physiotherapy leads + booking.
+- **Super Admin**: overall governance, boards, vertical controls.
+- **Business Development**: manages Google Sheets connectors, mappings, sync.
+- **Pre-sales**: qualification and branch assignment.
+- **Branch Admin**: confirms leads, books appointments.
+- **Head Physio**: sees today/new appointments, completion flow.
+- **Physio**: operational appointment execution and completion updates.
 
 ## Architecture Decisions
-- **Frontend**: React + shadcn, dark blue/black aesthetic, role-based tabbed workspace.
-- **Backend**: FastAPI + MongoDB (Motor).
-- **Versioned App Isolation**:
-  - New app implemented under `/api/v2` so clean rebuild can run independently.
-  - Separate v2 collections (`fitsiomax_v2_*`) to avoid legacy data conflicts.
-- **Core entities**:
-  - `users`, `sessions`, `services`, `doctors`, `leads`, `appointments`
-- **Lead routing**:
-  - `online_fitness` + `offline_fitness_gym` → Online Fitness queue
-  - `online_physio` → Online Physio queue
-  - `offline_physio` → Offline Physio queue
+- **Frontend**: React + shadcn, blue/black aesthetic, role-aware tab navigation.
+- **Backend**: FastAPI + MongoDB with isolated **v3 domain** under `/api/v3`.
+- **Data isolation**: dedicated `fitsiomax_v3_*` collections.
+- **Sheets model**:
+  - Multiple sheet connections
+  - Per-connection field mappings
+  - Tab-wise sync payload where tab name becomes lead source
+  - Dynamic extra field capture for unmapped columns
+- **Availability model**:
+  - Doctor slots stored per doctor
+  - Slot conflict blocking at booking time
+  - Slot normalization to avoid mixed datetime format mismatches
 
 ## Core Requirements (Static)
-1. Role-based login for 4 roles.
-2. Manual lead creation and manual appointment booking.
-3. Internal doctor calendar with slot creation and slot booking.
-4. Super Admin-only service creation.
-5. CSV/manual lead import from Google Sheet format.
-6. Location support for Anna Nagar, T Nagar, Parrys, ECR.
-7. Blue-black branded UI with FITSIOMAX logo and CRM View identity.
+1. Multi-role RBAC for 6 roles.
+2. Multi-sheet connector with tab-as-source ingestion.
+3. Dynamic lead field mapping with new-field capture.
+4. Manual lead creation support.
+5. Pre-sales qualification and branch assignment.
+6. Branch-admin confirmation and appointment booking.
+7. Available-doctor-only booking behavior.
+8. Head physio today/new appointment visibility.
+9. Branch board + master board stage visibility.
 
 ## What’s Implemented
-### 2026-03-20 (Full Rebuild to FITSIOMAX Appointment System)
-- Built complete **v2 backend** (`/api/v2`) for new appointment-first product flow.
-- Added seeded role logins:
-  - admin@fitsiomax.com / admin123
-  - onlinefitness@fitsiomax.com / online123
-  - onlinephysio@fitsiomax.com / physio123
-  - offlinephysio@fitsiomax.com / offline123
-- Implemented APIs for:
-  - role login/logout
-  - services (admin-only create)
-  - doctors + slot creation
-  - doctor availability calendar
-  - leads CRUD-lite + role routing
-  - manual/CSV lead import
-  - appointment booking with double-book conflict prevention
-  - dashboard summary metrics
-- Built brand-new **blue/black aesthetic frontend**:
-  - FITSIOMAX branded login + CRM header
-  - role-based tabs and flow visibility
-  - manual lead creation
-  - manual appointment booking
-  - doctor calendar slot selection UI
-  - services page (admin)
-  - import page for CSV/manual Google Sheet format
-- Added and maintained `data-testid` attributes for interactive and critical UI elements.
+### 2026-03-24 (FITSIOMAX OS v3 Rebuild)
+- Implemented new `/api/v3` backend with roles:
+  - super_admin, business_dev, pre_sales, branch_admin, head_physio, physio
+- Added v3 auth and role seed accounts.
+- Implemented business vertical management APIs.
+- Implemented branch creation with branch-admin credentials and branch board support.
+- Implemented doctor profile + slot management (head physio/physio hierarchy support).
+- Implemented lead lifecycle actions:
+  - manual lead create
+  - pre-sales qualify
+  - assign to branch
+  - branch confirm
+  - appointment booking
+- Implemented appointments module:
+  - today/new filters
+  - complete action updates appointment + lead stage
+- Implemented Google Sheets connector module:
+  - multiple sheet connections
+  - mapping save
+  - sync ingest with tab-as-source
+  - dynamic extra field storage
+- Added board APIs:
+  - master stage counts
+  - branch stage counts
 
-### 2026-03-20 (Bug Fix Iteration)
-- Fixed Import Tab issue where CSV-imported leads were not visible immediately in Leads table.
-- Applied CSV category normalization + filter reset + post-import lead refresh + auto-tab switch.
+### 2026-03-24 (UI Rebuild)
+- Rebuilt frontend CRM into FITSIOMAX OS role-based workspace.
+- Added dedicated modules/tabs for:
+  - Master board
+  - Lead master
+  - Pre-sales board
+  - Branch board
+  - Appointments
+  - Doctors
+  - Sheets connector
+  - Branches
+  - Business verticals
+- Added blue/black aesthetic with FITSIOMAX branding and logo.
+
+### 2026-03-24 (Regression Fixes)
+- Fixed head physio/physio appointment visibility blockers.
+- Reduced role-based 403 noise by role-aware frontend loading.
+- Hardened doctor select rendering and slot formatting behavior.
+- Added slot-time normalization to prevent mixed-format availability mismatch.
 
 ## Validation Notes
-- Backend curl smoke tests passed for full v2 flow (login, doctor/slot, lead create, appointment, dashboard).
-- Frontend screenshot tests passed for login, overview, leads, appointments.
-- Testing agent results:
-  - Iteration 3 found CSV-import visibility bug
-  - Iteration 4 confirmed fix PASS
+- Backend smoke tests passed for v3 key flows via curl.
+- Frontend screenshot tests passed for login, master board, sheets, branch board, head physio appointments.
+- Testing agent outcomes:
+  - Iteration 5 found head physio/physio visibility bug.
+  - Iteration 6 passed after fixes (14/14 backend tests).
 
 ## Prioritized Backlog
 ### P0
-- Add password hashing for v2 auth (currently plain-text in seed flow).
-- Add Super Admin user/team management screen for creating real role users.
+- Real OAuth credential integration for live Google Sheets pull (currently placeholder-credential mode).
+- Add user-to-branch assignment UI for operational roles (head physio, physio, branch staff).
+- Password hashing migration (currently plain text in seed/auth).
 
 ### P1
-- Real Google Sheets OAuth sync (currently CSV/manual-first mode active).
-- Rich weekly/monthly calendar visualization with drag/drop rescheduling.
-- Appointment reminders and notification workflows.
+- True automatic scheduler/cron for periodic sheet sync (currently manual trigger endpoint).
+- Branch-wise doctor roster management with shift windows.
+- Lead deduplication rules by phone + source + timestamp.
 
 ### P2
-- Revenue and conversion analytics dashboard.
-- Multi-doctor availability optimizer.
+- Analytics: conversion per source tab and branch.
+- Notification system for appointment reminders and no-shows.
+- Deep audit logs and role action timeline.
 
 ## Next Tasks List
-1. Implement secure password hashing + migration path.
-2. Add admin user management CRUD.
-3. Add OAuth-based Google Sheets live sync.
-4. Add appointment reschedule/cancel workflow and calendar month view.
+1. Plug real Google OAuth credentials and complete live sync flow (non-placeholder).
+2. Build branch assignment UI for operational users and enforce strict branch scoping.
+3. Add periodic background sync scheduler for all connected sheets.
+4. Add password hashing and migration path before production hardening.
 

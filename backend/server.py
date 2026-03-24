@@ -1473,6 +1473,16 @@ def v3_col(name: str):
     return db[f"fitsiomax_v3_{name}"]
 
 
+def normalize_slot_time(value: str) -> str:
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if parsed.tzinfo is not None:
+            parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
+        return parsed.replace(second=0, microsecond=0).isoformat(timespec="minutes")
+    except Exception:
+        return value.strip()[:16]
+
+
 class V3UserOut(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -1825,7 +1835,8 @@ async def v3_add_slots(doctor_id: str, payload: V3DoctorSlotsInput, _: V3UserOut
     doctor = await v3_col("doctors").find_one({"id": doctor_id}, {"_id": 0})
     if not doctor:
         raise HTTPException(status_code=404, detail="Doctor not found")
-    all_slots = sorted(set(doctor.get("slots", [])).union(set(payload.slots)))
+    normalized_slots = [normalize_slot_time(slot) for slot in payload.slots]
+    all_slots = sorted(set(doctor.get("slots", [])).union(set(normalized_slots)))
     await v3_col("doctors").update_one({"id": doctor_id}, {"$set": {"slots": all_slots}})
     updated = await v3_col("doctors").find_one({"id": doctor_id}, {"_id": 0})
     return V3DoctorOut(**updated)
@@ -1833,10 +1844,11 @@ async def v3_add_slots(doctor_id: str, payload: V3DoctorSlotsInput, _: V3UserOut
 
 @v3_router.get("/doctors/available")
 async def v3_available_doctors(branch_id: str, slot_time: str, _: V3UserOut = Depends(v3_current_user)):
+    slot_key = normalize_slot_time(slot_time)
     doctors = await v3_col("doctors").find({"branch_id": branch_id}, {"_id": 0}).to_list(1000)
-    booked = await v3_col("appointments").find({"branch_id": branch_id, "slot_time": slot_time, "status": "new_appointment"}, {"_id": 0, "doctor_id": 1}).to_list(200)
+    booked = await v3_col("appointments").find({"branch_id": branch_id, "slot_time": slot_key, "status": "new_appointment"}, {"_id": 0, "doctor_id": 1}).to_list(200)
     booked_ids = {item["doctor_id"] for item in booked}
-    available = [d for d in doctors if slot_time in d.get("slots", []) and d["id"] not in booked_ids]
+    available = [d for d in doctors if slot_key in d.get("slots", []) and d["id"] not in booked_ids]
     return {"available_doctors": available}
 
 
@@ -1922,12 +1934,13 @@ async def v3_book_appointment(lead_id: str, payload: V3BookAppointmentInput, use
     lead = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
+    slot_key = normalize_slot_time(payload.slot_time)
     doctor = await v3_col("doctors").find_one({"id": payload.doctor_id}, {"_id": 0})
     if not doctor:
         raise HTTPException(status_code=404, detail="Doctor not found")
-    if payload.slot_time not in doctor.get("slots", []):
+    if slot_key not in doctor.get("slots", []):
         raise HTTPException(status_code=400, detail="Doctor slot unavailable")
-    clash = await v3_col("appointments").find_one({"doctor_id": payload.doctor_id, "slot_time": payload.slot_time, "status": "new_appointment"}, {"_id": 0})
+    clash = await v3_col("appointments").find_one({"doctor_id": payload.doctor_id, "slot_time": slot_key, "status": "new_appointment"}, {"_id": 0})
     if clash:
         raise HTTPException(status_code=409, detail="Slot already booked")
 
@@ -1938,7 +1951,7 @@ async def v3_book_appointment(lead_id: str, payload: V3BookAppointmentInput, use
         "branch_id": lead.get("branch_id") or doctor["branch_id"],
         "doctor_id": doctor["id"],
         "doctor_name": doctor["full_name"],
-        "slot_time": payload.slot_time,
+        "slot_time": slot_key,
         "status": "new_appointment",
         "created_by_role": user.role,
         "created_at": now_iso(),
