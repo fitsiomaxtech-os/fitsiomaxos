@@ -43,6 +43,7 @@ import {
   updateLead,
 } from "@/lib/api";
 import { toast, Toaster } from "@/components/ui/sonner";
+import { BusinessLeadsDashboard } from "@/components/BusinessLeadsDashboard";
 
 const ROLE_META = {
   super_admin: { label: "Super Admin", icon: ShieldCheck },
@@ -802,7 +803,7 @@ export const CRMPage = ({ auth, onLogout }) => {
           </Card>
         )}
 
-        {(showSuperAdminBoard || showBusinessDevBoard) && (
+        {(showSuperAdminBoard) && (
           <Card className="border-slate-200 bg-white" data-testid="top-board-card">
             <CardHeader>
               <CardTitle className="text-base text-slate-900" data-testid="top-board-title">
@@ -820,6 +821,10 @@ export const CRMPage = ({ auth, onLogout }) => {
               ))}
             </CardContent>
           </Card>
+        )}
+
+        {showBusinessDevBoard && (
+          <BusinessLeadsDashboard />
         )}
 
         {showSuperAdminBoard && (
@@ -864,53 +869,7 @@ export const CRMPage = ({ auth, onLogout }) => {
           </div>
         )}
 
-        {showBusinessDevBoard && (
-          <div className="grid gap-4 lg:grid-cols-2" data-testid="business-dev-board-section">
-            <Card className="border-slate-200 bg-white" data-testid="business-dev-connection-card">
-              <CardHeader>
-                <CardTitle className="text-base">Google Sheets Connections</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <form className="space-y-2" onSubmit={createSheetConnectionNow} data-testid="business-dev-connection-form">
-                  <Input value={sheetConnectionForm.connection_name} onChange={(e) => setSheetConnectionForm((p) => ({ ...p, connection_name: e.target.value }))} placeholder="Connection Name" data-testid="business-dev-connection-name-input" />
-                  <Input value={sheetConnectionForm.spreadsheet_id} onChange={(e) => setSheetConnectionForm((p) => ({ ...p, spreadsheet_id: e.target.value }))} placeholder="Spreadsheet ID" data-testid="business-dev-spreadsheet-id-input" />
-                  <Input type="number" value={sheetConnectionForm.sync_interval_minutes} onChange={(e) => setSheetConnectionForm((p) => ({ ...p, sync_interval_minutes: Number(e.target.value) }))} data-testid="business-dev-sync-interval-input" />
-                  <Button type="submit" data-testid="business-dev-connection-submit-button">Add Connection</Button>
-                </form>
-                <div className="space-y-1">
-                  {sheetConnections.map((conn) => (
-                    <div key={conn.id} className="rounded border border-slate-200 bg-slate-50 p-2 text-xs" data-testid={`business-dev-connection-row-${conn.id}`}>
-                      {conn.connection_name} · {conn.spreadsheet_id}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-slate-200 bg-white" data-testid="business-dev-mapping-card">
-              <CardHeader>
-                <CardTitle className="text-base">Field Mapping + Sync</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <select value={selectedConnectionId} onChange={(e) => setSelectedConnectionId(e.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-3 text-sm" data-testid="business-dev-connection-select">
-                  <option value="">Select connection</option>
-                  {sheetConnections.map((conn) => (
-                    <option key={conn.id} value={conn.id}>{conn.connection_name}</option>
-                  ))}
-                </select>
-                <Input value={mappingFields.name} onChange={(e) => setMappingFields((p) => ({ ...p, name: e.target.value }))} placeholder="Name column" data-testid="business-dev-map-name-input" />
-                <Input value={mappingFields.phone} onChange={(e) => setMappingFields((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone column" data-testid="business-dev-map-phone-input" />
-                <Input value={mappingFields.email} onChange={(e) => setMappingFields((p) => ({ ...p, email: e.target.value }))} placeholder="Email column" data-testid="business-dev-map-email-input" />
-                <Input value={mappingFields.vertical} onChange={(e) => setMappingFields((p) => ({ ...p, vertical: e.target.value }))} placeholder="Vertical column" data-testid="business-dev-map-vertical-input" />
-                <Button variant="outline" onClick={saveMappingNow} data-testid="business-dev-save-mapping-button">Save Mapping</Button>
-                <textarea value={syncPayload} onChange={(e) => setSyncPayload(e.target.value)} className="min-h-[180px] w-full rounded-md border border-slate-200 p-3 text-xs" data-testid="business-dev-sync-payload-textarea" />
-                <Button onClick={runSyncNow} data-testid="business-dev-run-sync-button">Run Sync</Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {(showSuperAdminBoard || showBranchBoard) && (
+        {showSuperAdminBoard && (
           <Card className="border-slate-200 bg-white" data-testid="lead-master-card">
             <CardHeader>
               <CardTitle className="text-base">Lead Master Board</CardTitle>
@@ -1076,16 +1035,18 @@ export const CRMPage = ({ auth, onLogout }) => {
           </div>
         )}
 
-        <Card className="border-slate-200 bg-white" data-testid="mock-preview-card">
-          <CardHeader>
-            <CardTitle className="text-base">Live Lead Source Preview (Instagram / Meta / Walkins)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <pre className="overflow-auto rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700" data-testid="mock-preview-json">
-              {JSON.stringify(liveLeadPreview, null, 2)}
-            </pre>
-          </CardContent>
-        </Card>
+        {!showBusinessDevBoard && (
+          <Card className="border-slate-200 bg-white" data-testid="mock-preview-card">
+            <CardHeader>
+              <CardTitle className="text-base">Live Lead Source Preview (Instagram / Meta / Walkins)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <pre className="overflow-auto rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700" data-testid="mock-preview-json">
+                {JSON.stringify(liveLeadPreview, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {loading && (
