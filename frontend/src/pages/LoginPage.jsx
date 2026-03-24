@@ -1,27 +1,25 @@
 import { useState } from "react";
-import { ShieldCheck, UserRound, Waves } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiLogin } from "@/lib/api";
 import { toast } from "@/components/ui/sonner";
 
-const LOGO_URL =
-  "https://customer-assets.emergentagent.com/job_therapy-crm-board/artifacts/u4bafq34_Fitsiomax-logo.webp";
+const BG_IMAGE =
+  "https://images.pexels.com/photos/62693/pexels-photo-62693.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940";
 
 export const LoginPage = ({ onLogin }) => {
   const [email, setEmail] = useState("admin@fitsiomax.com");
   const [password, setPassword] = useState("admin123");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
     try {
-      const response = await apiLogin(email, password);
-      onLogin(response);
-      toast.success("Welcome to FITSIOMAX Appointment CRM View");
+      const data = await apiLogin(email, password);
+      onLogin(data);
+      toast.success("Login successful");
     } catch (error) {
       toast.error(error?.response?.data?.detail || "Login failed");
     } finally {
@@ -30,102 +28,90 @@ export const LoginPage = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#0f2a4f,#020817_60%)] px-4 py-6 md:px-8 md:py-8" data-testid="login-page">
-      <div className="mx-auto grid min-h-[calc(100vh-3rem)] max-w-7xl overflow-hidden rounded-2xl border border-sky-500/20 bg-slate-950/70 shadow-2xl backdrop-blur-md lg:grid-cols-2">
-        <div className="flex items-center justify-center p-6 md:p-10" data-testid="login-form-pane">
-          <Card className="w-full max-w-xl border-slate-800 bg-slate-900/80 text-slate-100" data-testid="login-card">
-            <CardHeader className="space-y-4">
-              <div className="flex items-center gap-3" data-testid="login-brand-row">
-                <div className="rounded-lg bg-white p-1" data-testid="login-logo-wrap">
-                  <img src={LOGO_URL} alt="FITSIOMAX" className="h-12 w-12 object-contain" data-testid="login-logo-image" />
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.16em] text-sky-300" data-testid="login-brand-subtitle">
-                    Physio Care & Fitness Centre
-                  </p>
-                  <h1 className="font-heading text-4xl font-bold text-white" data-testid="login-brand-title">
-                    FITSIOMAX CRM View
-                  </h1>
-                </div>
-              </div>
-              <p className="text-sm text-slate-300" data-testid="login-description">
-                FITSIOMAX OS with Business Development sheets sync, pre-sales routing, branch boards, and physio calendars.
-              </p>
+    <div className="relative min-h-screen overflow-hidden bg-white" data-testid="screen1-login-page">
+      <img
+        src={BG_IMAGE}
+        alt="Minimal background"
+        className="absolute inset-0 h-full w-full object-cover object-center"
+        data-testid="screen1-login-background-image"
+      />
+      <div className="absolute inset-0 bg-white/90 backdrop-blur-[2px]" data-testid="screen1-login-overlay" />
 
-              <Tabs defaultValue="super_admin" data-testid="login-role-tabs">
-                <TabsList className="grid h-auto w-full grid-cols-3 bg-slate-800 p-1">
-                  <TabsTrigger value="super_admin" className="gap-1" data-testid="role-super-admin-tab">
-                    <ShieldCheck className="h-4 w-4" /> Super Admin
-                  </TabsTrigger>
-                  <TabsTrigger value="online" className="gap-1" data-testid="role-online-tab">
-                    <Waves className="h-4 w-4" /> Online
-                  </TabsTrigger>
-                  <TabsTrigger value="offline" className="gap-1" data-testid="role-offline-tab">
-                    <UserRound className="h-4 w-4" /> Offline
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleLogin} className="space-y-4" data-testid="login-form">
-                <div className="space-y-2">
-                  <label className="text-sm text-slate-300" data-testid="login-email-label">
-                    Email
-                  </label>
-                  <Input
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    className="border-slate-700 bg-slate-950 text-slate-100"
-                    placeholder="your@fitsiomax.com"
-                    data-testid="login-email-input"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm text-slate-300" data-testid="login-password-label">
-                    Password
-                  </label>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    className="border-slate-700 bg-slate-950 text-slate-100"
-                    placeholder="••••••••"
-                    data-testid="login-password-input"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-sky-500 text-slate-950 hover:bg-sky-400"
-                  data-testid="login-submit-button"
-                >
-                  {loading ? "Signing in..." : "Enter CRM View"}
-                </Button>
-              </form>
-
-              <div className="mt-4 rounded-md border border-slate-700 bg-slate-950/70 p-3 text-xs text-slate-300" data-testid="login-demo-accounts">
-                <p><strong>Super Admin:</strong> admin@fitsiomax.com / admin123</p>
-                <p><strong>Business Dev:</strong> businessdev@fitsiomax.com / bd123</p>
-                <p><strong>Pre Sales:</strong> presales@fitsiomax.com / presales123</p>
-                <p><strong>Branch Admin:</strong> branchadmin@fitsiomax.com / branch123</p>
-                <p><strong>Head Physio:</strong> headphysio@fitsiomax.com / head123</p>
-                <p><strong>Physio:</strong> physio@fitsiomax.com / physio123</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="hidden p-10 lg:flex" data-testid="login-right-pane">
-          <div className="flex w-full flex-col justify-end rounded-2xl border border-sky-500/30 bg-[linear-gradient(150deg,#0f172a,#0b2e56)] p-8">
-            <h2 className="font-heading text-4xl text-white" data-testid="login-right-title">
-              Appointment Book System
-            </h2>
-            <p className="mt-3 text-sm text-slate-200" data-testid="login-right-description">
-              Route Google Sheet leads by source tab (Instagram, Meta, Walkins), qualify in pre-sales,
-              assign to branches, and book appointments with available physiotherapists.
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-8 md:px-8 md:py-10">
+        <Card
+          className="w-full max-w-xl rounded-xl border border-slate-200 bg-white shadow-[0_8px_30px_rgb(2,6,23,0.06)]"
+          data-testid="screen1-login-card"
+        >
+          <CardHeader className="space-y-3 pb-2">
+            <p
+              className="text-xs uppercase tracking-[0.14em] text-sky-600"
+              data-testid="screen1-login-brand-subtitle"
+            >
+              FITSIOMAX OS
             </p>
-          </div>
-        </div>
+            <CardTitle className="font-heading text-4xl text-slate-900" data-testid="screen1-login-title">
+              CRM View Login
+            </CardTitle>
+            <p className="text-sm text-slate-600" data-testid="screen1-login-description">
+              Screen 1: Role Access login for Super Admin, Business Development, Pre-sales, Branch Admin,
+              Head Physio, and Physio.
+            </p>
+          </CardHeader>
+
+          <CardContent>
+            <form className="space-y-4" onSubmit={handleSubmit} data-testid="screen1-login-form">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700" data-testid="screen1-login-email-label">
+                  Email
+                </label>
+                <Input
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="user@fitsiomax.com"
+                  className="border-slate-200 bg-white"
+                  data-testid="screen1-login-email-input"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700" data-testid="screen1-login-password-label">
+                  Password
+                </label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="••••••••"
+                  className="border-slate-200 bg-white"
+                  data-testid="screen1-login-password-input"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-sky-500 text-white hover:bg-sky-600"
+                data-testid="screen1-login-submit-button"
+              >
+                {loading ? "Signing in..." : "Continue"}
+              </Button>
+            </form>
+
+            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3" data-testid="screen1-login-demo-box">
+              <p className="text-xs text-slate-500" data-testid="screen1-login-demo-title">
+                Demo users
+              </p>
+              <div className="mt-1 space-y-1 text-xs text-slate-600">
+                <p data-testid="screen1-demo-super-admin">admin@fitsiomax.com / admin123</p>
+                <p data-testid="screen1-demo-business-dev">businessdev@fitsiomax.com / bd123</p>
+                <p data-testid="screen1-demo-pre-sales">presales@fitsiomax.com / presales123</p>
+                <p data-testid="screen1-demo-branch-admin">branchadmin@fitsiomax.com / branch123</p>
+                <p data-testid="screen1-demo-head-physio">headphysio@fitsiomax.com / head123</p>
+                <p data-testid="screen1-demo-physio">physio@fitsiomax.com / physio123</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
