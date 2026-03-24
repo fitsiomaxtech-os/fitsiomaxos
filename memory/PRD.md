@@ -20,42 +20,29 @@ Build FITSIOMAX OS - multi-role SaaS for physiotherapy/fitness business with:
 - Lead Source: Aggregation with stage breakdown
 
 ### Pre-sales Board (Full Redesign)
-- Stage metric cards (Total, New Lead, Qualified, Assigned)
-- Search bar, date filter, Kanban/List toggle, stage tabs
-- Add New Lead popup modal
-- Lead Detail Modal with 4 tabs (Overview, Remarks, Follow-up, Activity)
-- Branch Picker Popup: Click "Assigned to Branch" -> radio-select from available branches
-- Appointment Booking Flow: Date picker -> Calendly-style time slots -> doctor list -> Book
+- Stage metric cards, search, date filter, Kanban/List toggle, stage tabs
+- Add New Lead popup, Lead Detail Modal (Overview, Remarks, Follow-up, Activity)
+- Branch Picker Popup, Appointment Booking Flow (Calendly-style)
 
-### Branch Admin Board (2 Tabs)
+### Branch Admin Board (3 Tabs)
 #### Tab 1: Patient Pipeline
-- 8-stage Kanban pipeline: New Appointment -> Call & Confirm -> Head Physio Appointment -> Consultation Fee Collected -> Consultation Done -> Follow-up Package Upsell -> Package Paid -> Jr. Physio Assigned
-- Collect consultation/package fees, assign physios, move branch stages
+- 8-stage Kanban: New Appointment -> Call & Confirm -> Head Physio Appointment -> Consultation Fee Collected -> Consultation Done -> Follow-up Package Upsell -> Package Paid -> Jr. Physio Assigned
 
-#### Tab 2: Head Physio Calendar (NEW - Feb 2026)
-- **Left Panel**: List of Head Physio doctors in the branch with slot counts
-  - Add New Head Physio: Creates user (with login) + doctor record in one step
-- **Right Panel**: Calendly-style calendar for managing doctor availability
-  - Month calendar with navigation
-  - Date selection shows time slot grid (8:00 AM - 8:00 PM, 30-min intervals)
-  - Slot configuration: Duration (15/30/45/60 min) + Consultation Type (Initial/Follow-up/Review)
-  - Toggle slots on/off: visual states (Available/Adding/Removing/Booked)
-  - Batch Save/Discard for pending changes
-  - Booked slots shown with patient name, cannot be removed
+#### Tab 2: Head Physio Calendar
+- Left: Doctor list + Add Head Physio (creates user + doctor)
+- Right: Calendly-style calendar — month nav, time slot grid (8AM-8PM), duration (15/30/45/60m), consultation type (Initial/Follow-up/Review), batch save/discard
 
-### Header
-- Full-width, white background, sticky
-- FitsiomaxOS brand + role-specific title + "Hi {Name}" greeting
+#### Tab 3: Finance Board (NEW - Feb 2026)
+- Summary cards: Total Revenue, Consultation Fees, Package Payments, Pending Collection
+- Filters: Fee type toggle (All/Consultation/Package), patient search, date range
+- Transactions table: Patient, Type badge, Amount, Details (weeks), Collected By, Date, Stage
+- Footer with transaction count + total
 
-### Backend Architecture (Refactored Feb 2026)
-- Modular structure: server.py (entry), database.py, security.py, deps.py, seed.py
-- Schemas: schemas/v1.py, schemas/v2.py, schemas/v3.py
-- Routers: v3_auth, v3_config, v3_leads, v3_branch_admin, v3_appointments, v3_sheets, v3_dashboard, v3_head_physio
-- Legacy routers: v1.py, v2.py (preserved for backward compatibility)
-
-### Security
-- bcrypt password hashing via passlib
-- Auto-upgrade: plain-text passwords migrate to hashed on login
+### Backend Architecture (Modular - Feb 2026)
+- server.py (entry), database.py, security.py, deps.py, seed.py, constants.py, utils.py
+- Schemas: schemas/v1.py, v2.py, v3.py
+- Routers: v3_auth, v3_config, v3_leads, v3_branch_admin, v3_appointments, v3_sheets, v3_dashboard, v3_head_physio, v3_finance
+- Legacy: v1.py, v2.py
 
 ## Prioritized Backlog
 
@@ -63,11 +50,11 @@ Build FITSIOMAX OS - multi-role SaaS for physiotherapy/fitness business with:
 - Live Google Sheets OAuth flow for Business Dev role
 
 ### P1
-- Head Physio board: dedicated dashboard & workflow for Head Physio role (login as Head Physio, see their appointments, manage consultations)
-- Physio board: dedicated dashboard & workflow for Jr. Physio role
+- Head Physio dedicated board (login as Head Physio, see appointments, manage consultations)
+- Physio dedicated board (login as Jr. Physio, see assigned patients)
 
 ### P2
-- Visual weekly calendar for Branch Admin appointments
+- Visual weekly calendar for Branch Admin
 - Drag-and-drop on Kanban boards
-- Notification system for key events
+- Notification system
 - Auto-sync scheduler for Google Sheets
