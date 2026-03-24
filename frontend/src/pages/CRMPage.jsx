@@ -587,34 +587,33 @@ export const CRMPage = ({ auth, onLogout }) => {
       <Toaster richColors position="top-right" />
 
       <div className="w-full space-y-6" data-testid="role-board-full-width-wrap">
-        <header className="sticky top-0 z-20 rounded-xl border border-slate-200 bg-white p-5 shadow-sm" data-testid="role-board-header">
+        <header className="sticky top-0 z-20 rounded-xl bg-gradient-to-r from-sky-700 to-sky-600 p-5 shadow-lg" data-testid="role-board-header">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <img src={LOGO_URL} alt="Fitsiomax" className="h-12 w-12 rounded-md object-contain" data-testid="header-left-logo" />
+              <img src={LOGO_URL} alt="Fitsiomax" className="h-12 w-12 rounded-md bg-white/90 object-contain p-1" data-testid="header-left-logo" />
               <div>
-                <p className="text-xs uppercase tracking-[0.14em] text-sky-600" data-testid="role-board-brand-subtitle">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-sky-100" data-testid="role-board-brand-subtitle">
                   FITSIOMAX OS
                 </p>
-                <h1 className="font-heading text-4xl text-slate-900" data-testid="role-board-title">
+                <h1 className="font-heading text-3xl font-bold text-white" data-testid="role-board-title">
                   {boardTitle}
                 </h1>
-                <p className="text-sm text-slate-600" data-testid="role-board-user-info">
+                <p className="text-sm text-sky-100" data-testid="role-board-user-info">
                   {auth.user.full_name} · {auth.user.email}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <img src={LOGO_URL} alt="Fitsiomax" className="h-9 w-9 rounded-md object-contain" data-testid="header-right-logo" />
               <Button
                 variant="outline"
-                className="border-slate-200 bg-white"
+                className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
                 data-testid="role-board-profile-button"
               >
                 <UserRound className="mr-2 h-4 w-4" /> {roleLabel} Profile
               </Button>
               <Button
                 variant="outline"
-                className="border-slate-200 bg-white"
+                className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
                 data-testid="role-board-settings-button"
               >
                 <Settings className="mr-2 h-4 w-4" /> Settings
@@ -622,7 +621,7 @@ export const CRMPage = ({ auth, onLogout }) => {
               <Button
                 variant="outline"
                 onClick={loadEverything}
-                className="border-slate-200 bg-white"
+                className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
                 data-testid="role-board-refresh-button"
               >
                 <RefreshCw className="mr-2 h-4 w-4" /> Refresh
@@ -630,7 +629,7 @@ export const CRMPage = ({ auth, onLogout }) => {
               <Button
                 variant="outline"
                 onClick={logout}
-                className="border-slate-200 bg-white"
+                className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
                 data-testid="role-board-logout-button"
               >
                 <LogOut className="mr-2 h-4 w-4" /> Logout
