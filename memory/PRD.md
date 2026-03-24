@@ -58,6 +58,19 @@ Build FITSIOMAX OS with:
 - Dropdown now supports immediate **auto-fill + auto-login** behavior.
 - Included all 6 demo users in dropdown and verified role landing accuracy.
 
+### Pre-sales UX Focus Update
+- Removed top user-role card board section from the dashboard UI.
+- Added fixed sticky header for users with:
+  - Profile button
+  - Settings button
+  - Refresh button
+  - Logout button
+- Implemented pre-sales specific board experience:
+  - Pre-sales login now shows only pre-sales view modules
+  - Horizontal stage click tabs
+  - Kanban/List toggle
+  - Stage-aware filtering in both views
+
 ### Post-QA Fixes Applied
 - Fixed default seeded `branchadmin@fitsiomax.com` branch linkage (non-null branch_id).
 - Fixed `/api/v3/leads/{lead_id}/confirm` to enforce scoped update result and return 403/404 correctly.
@@ -69,6 +82,7 @@ Build FITSIOMAX OS with:
 - Role board testing (iteration 8): issues found and fixed.
 - Retest (iteration 9): all targeted backend/frontend checks passed; no blocking issues.
 - Dropdown retest (iteration 10): pass for immediate auto-login and manual login compatibility.
+- Pre-sales board UI retest (iteration 11): pass for fixed header + pre-sales-only Kanban/List/stage-tab flow.
 - Backend regression files created by testing agent:
   - `/app/backend/tests/test_fitsiomax_v3_seeded_role_integrity.py`
   - `/app/backend/tests/test_fitsiomax_v3_iteration9_retest.py`
