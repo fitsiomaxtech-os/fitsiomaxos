@@ -2024,7 +2024,7 @@ async def v3_edit_lead(
 
 
 @v3_router.post("/leads/{lead_id}/qualify", response_model=V3LeadOut)
-async def v3_qualify_lead(lead_id: str, _: V3UserOut = Depends(v3_require_roles("pre_sales", "super_admin"))):
+async def v3_qualify_lead(lead_id: str, _: V3UserOut = Depends(v3_require_roles("pre_sales", "business_dev", "super_admin"))):
     await v3_col("leads").update_one({"id": lead_id}, {"$set": {"stage": "Pre-sales Qualified", "updated_at": now_iso()}})
     lead = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
     if not lead:
@@ -2033,7 +2033,7 @@ async def v3_qualify_lead(lead_id: str, _: V3UserOut = Depends(v3_require_roles(
 
 
 @v3_router.post("/leads/{lead_id}/assign-branch", response_model=V3LeadOut)
-async def v3_assign_branch(lead_id: str, payload: V3AssignBranchInput, _: V3UserOut = Depends(v3_require_roles("pre_sales", "super_admin"))):
+async def v3_assign_branch(lead_id: str, payload: V3AssignBranchInput, _: V3UserOut = Depends(v3_require_roles("pre_sales", "business_dev", "super_admin"))):
     await v3_col("leads").update_one(
         {"id": lead_id},
         {"$set": {"branch_id": payload.branch_id, "stage": "Assigned to Branch", "updated_at": now_iso()}},

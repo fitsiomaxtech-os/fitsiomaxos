@@ -21,117 +21,70 @@ Build FITSIOMAX OS with:
 - Restrict frontend scope to **Screen 1 only**.
 - Provide mocked Google Sheet lead JSON preview (no live sync yet).
 
-## What’s Implemented (2026-03-24)
+## What's Implemented (2026-03-24)
 ### Screen 1 Complete
 - Rebuilt Login screen to white/blue minimal SaaS style.
-- Added role-access selection screen after login with exactly 6 role cards:
-  - Super Admin
-  - Business Dev
-  - Pre-sales
-  - Branch Admin
-  - Head Physio
-  - Physio
-- Role-lock behavior:
-  - Logged-in role card marked active
-  - Other roles shown locked for current login
-- Added mock JSON block to preview next-phase Google Sheet lead structure.
-- Added complete `data-testid` coverage for Screen 1 UI interactions.
+- Added role-access selection screen after login with exactly 6 role cards.
+- Demo User dropdown for quick login.
 
 ### Role-Wise Admin Boards Complete
-- Built separate role-based boards for all 6 users using real backend data:
-  - Super Admin board
-  - Business Development board
-  - Pre-sales board
-  - Branch Admin board
-  - Head Physio board
-  - Physio board
-- Implemented flow actions by role:
-  - Pre-sales: qualify + assign branch
-  - Branch Admin: confirm + check available doctors + book appointment
-  - Head Physio/Physio: today/new appointments + complete
-- Added Business Dev sheet connection + field mapping + sync controls in board.
-- Added Super Admin modules for vertical and branch setup in board.
-- Replaced mocked lead preview with live lead-source preview from backend leads.
-
-### Login Demo Dropdown Enhancement
-- Added Demo User dropdown on login screen.
-- Dropdown now supports immediate **auto-fill + auto-login** behavior.
-- Included all 6 demo users in dropdown and verified role landing accuracy.
+- Built separate role-based boards for all 6 users using real backend data.
+- Implemented flow actions by role.
 
 ### Pre-sales UX Focus Update
-- Removed top user-role card board section from the dashboard UI.
-- Added fixed sticky header for users with:
-  - Profile button
-  - Settings button
-  - Refresh button
-  - Logout button
-- Implemented pre-sales specific board experience:
-  - Pre-sales login now shows only pre-sales view modules
-  - Horizontal stage click tabs
-  - Kanban/List toggle
-  - Stage-aware filtering in both views
+- Fixed sticky header with profile/settings/refresh/logout.
+- Kanban/List toggle, stage-tab filtering, custom fields, date filters, lead editing.
 
 ### Full-Width + Multicolor UI Enhancement
-- Updated header and board wrapper to full-width layout (removed max-width container constraint).
-- Applied pastel multicolor stage system across UI:
-  - Stage tabs
-  - Kanban columns
-  - Master flow snapshot cards
-- Applied color-coded action buttons by intent:
-  - Qualify (amber)
-  - Assign (violet)
-  - Confirm (teal)
-  - Check Available (blue)
-  - Book Appointment (indigo)
-  - Complete (emerald)
+- Full-width layout, pastel multicolor stage system.
 
 ### Logo + Pre-sales Lead Module Enhancement
-- Added FITSIOMAX logo in top-left header and right-side profile/settings area.
-- Updated board title to **Pre - sale s Board**.
-- Added lead edit capability in pre-sales board (name, phone, email, notes, custom attributes).
-- Added custom field builder with attribute types:
-  - text
-  - number
-  - date
-  - select (comma options)
-- Added date range filters (from/to) in pre-sales board lead module.
-- Backend upgraded with:
-  - `PUT /api/v3/leads/{lead_id}` for lead editing
-  - date-range filtering support in `GET /api/v3/leads`
+- FITSIOMAX logo in header, custom field builder, date range filters.
+
+### Business Development Dashboard (2026-02-XX)
+- **NEW**: Created self-contained `BusinessLeadsDashboard.jsx` component with 5 tabs:
+  - **Dashboard**: Top metrics (Total Leads, Branches, Appointments, Completed, Sheet Connections), Lead Pipeline stage counts, Leads by Source/Branch breakdown, Recent Leads table.
+  - **Branches**: Branch list table, Add Branch form with admin creation, vertical selection.
+  - **Lead Master**: Full leads table with search, stage/branch/date filters. Qualify and Assign actions for leads.
+  - **Google Sheet Connection**: Create connections, existing connections list with selection, field mapping configuration, JSON sync execution.
+  - **Lead Source**: Source aggregation table with stage breakdown per source.
+- **NEW**: Backend endpoints:
+  - `GET /api/v3/dashboard/bd-summary` - Aggregated metrics for BD dashboard.
+  - `GET /api/v3/lead-sources` - Lead source aggregation with stage breakdown.
+- Updated BD role permissions to allow qualify and assign-branch operations.
+- Frontend API functions: `getBdSummary()`, `getLeadSources()`.
 
 ### Post-QA Fixes Applied
-- Fixed default seeded `branchadmin@fitsiomax.com` branch linkage (non-null branch_id).
-- Fixed `/api/v3/leads/{lead_id}/confirm` to enforce scoped update result and return 403/404 correctly.
-- Replaced hardcoded sheet callback URL with env-driven callback value.
-- Added slot normalization and verified branch-admin confirm→book path.
+- Fixed default seeded branch linkage.
+- Fixed confirm endpoint scoping.
+- Replaced hardcoded sheet callback URL.
+- Added slot normalization.
 
 ## Validation Notes
-- Screen 1 testing (iteration 7): pass for login + role access.
-- Role board testing (iteration 8): issues found and fixed.
-- Retest (iteration 9): all targeted backend/frontend checks passed; no blocking issues.
-- Dropdown retest (iteration 10): pass for immediate auto-login and manual login compatibility.
-- Pre-sales board UI retest (iteration 11): pass for fixed header + pre-sales-only Kanban/List/stage-tab flow.
-- Full-width + multicolor validation (iteration 12): pass for requested UI updates without functional regressions.
-- Iteration 13 validation: pass for logo placement, board title update, lead edit, custom fields, and date-filter behavior.
-- Backend regression files created by testing agent:
-  - `/app/backend/tests/test_fitsiomax_v3_seeded_role_integrity.py`
-  - `/app/backend/tests/test_fitsiomax_v3_iteration9_retest.py`
+- Iteration 14 (BD Dashboard): All 5 tabs functional, backend APIs correct, 100% frontend pass, role permissions verified.
+- Previous iterations (1-13): All pass for login, role boards, pre-sales, full-width UI, logo, custom fields, date filters.
 
 ## Prioritized Backlog (Next Screens)
 ### P0
-- Connect real Google OAuth credentials for live Sheets token flow (currently env-ready connector).
-- Add scheduler for automatic periodic multi-sheet sync.
+- Connect real Google OAuth credentials for live Sheets token flow.
+- Add "Add New" and "Connect Leads" buttons to Pre-sales view.
 
 ### P1
-- Strengthen branch scoping for all non-admin roles (strict backend guards).
-- Add branch-level filters and summary widgets for daily team tracking.
+- Strengthen branch scoping for all non-admin roles.
+- Fix recurring hydration warning (span inside option element).
+- Secure password hashing (plain text currently).
+- Backend refactoring (server.py 2300+ lines).
+- Frontend refactoring (CRMPage.jsx 1000+ lines).
 
 ### P2
 - Add calendar month/week view with slot drag-reschedule.
 - Add notification hooks for appointment reminders.
+- Auto-sync scheduler for connected sheets.
+- Branch analytics cards.
 
 ## Next Tasks List
-1. Build next screen: **Live Google OAuth connect + token status** for Business Dev.
-2. Add auto-sync job settings (every N minutes) for connected sheets.
-3. Add branch analytics cards (new, confirmed, booked, completed per branch).
-
+1. Add "Add New" and "Connect Leads" buttons to Pre-sales view.
+2. Build live Google OAuth connect + token status for Business Dev.
+3. Add auto-sync job settings for connected sheets.
+4. Secure password hashing.
+5. Backend/frontend refactoring.
