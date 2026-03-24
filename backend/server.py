@@ -1675,11 +1675,29 @@ async def v3_seed() -> None:
                 }
             )
 
-    first_branch = await v3_col("branches").find_one({}, {"_id": 0, "id": 1})
+    first_branch = await v3_col("branches").find_one({}, {"_id": 0})
+    branch_admin_user = await v3_col("users").find_one({"email": "branchadmin@fitsiomax.com"}, {"_id": 0})
+
+    if not first_branch and branch_admin_user:
+        seeded_branch_id = str(uuid.uuid4())
+        seeded_branch = {
+            "id": seeded_branch_id,
+            "branch_name": "Anna Nagar Seed Branch",
+            "address": "Anna Nagar, Chennai",
+            "admin_user_id": branch_admin_user["id"],
+            "admin_name": branch_admin_user["full_name"],
+            "admin_email": branch_admin_user["email"],
+            "admin_phone": "",
+            "vertical": "offline_physiotherapy",
+            "created_at": now_iso(),
+        }
+        await v3_col("branches").insert_one(seeded_branch.copy())
+        first_branch = seeded_branch
+
     if first_branch:
         await v3_col("users").update_many(
             {
-                "email": {"$in": ["headphysio@fitsiomax.com", "physio@fitsiomax.com"]},
+                "email": {"$in": ["branchadmin@fitsiomax.com", "headphysio@fitsiomax.com", "physio@fitsiomax.com"]},
                 "branch_id": None,
             },
             {"$set": {"branch_id": first_branch["id"]}},
@@ -1922,7 +1940,13 @@ async def v3_confirm_lead(lead_id: str, user: V3UserOut = Depends(v3_require_rol
     if user.role == "branch_admin":
         filter_query["branch_id"] = user.branch_id
 
-    await v3_col("leads").update_one(filter_query, {"$set": {"stage": "Branch Confirmed", "updated_at": now_iso()}})
+    result = await v3_col("leads").update_one(filter_query, {"$set": {"stage": "Branch Confirmed", "updated_at": now_iso()}})
+    if result.matched_count == 0:
+        exists = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0, "id": 1})
+        if not exists:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        raise HTTPException(status_code=403, detail="Lead not in your branch scope")
+
     lead = await v3_col("leads").find_one({"id": lead_id}, {"_id": 0})
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
@@ -1988,13 +2012,14 @@ async def v3_complete_appointment(appointment_id: str, _: V3UserOut = Depends(v3
 
 @v3_router.post("/sheets/connections")
 async def v3_create_sheet_connection(payload: V3SheetConnectionCreate, _: V3UserOut = Depends(v3_require_roles("business_dev", "super_admin"))):
+    callback_url = os.environ.get("GOOGLE_SHEETS_CALLBACK_URL") or os.environ.get("GOOGLE_REDIRECT_URI") or ""
     connection = {
         "id": str(uuid.uuid4()),
         "connection_name": payload.connection_name,
         "spreadsheet_id": payload.spreadsheet_id,
         "sync_interval_minutes": payload.sync_interval_minutes,
         "oauth_connected": False,
-        "callback_url": "https://therapy-crm-board.preview.emergentagent.com/api/oauth/sheets/callback",
+        "callback_url": callback_url,
         "created_at": now_iso(),
     }
     await v3_col("sheet_connections").insert_one(connection.copy())

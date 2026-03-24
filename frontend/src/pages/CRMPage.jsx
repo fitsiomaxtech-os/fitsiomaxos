@@ -35,7 +35,6 @@ import {
   getDoctors,
   getLeads,
   getMasterBoard,
-  getRoleSelectionMock,
   getSheetConnections,
   getVerticals,
   qualifyLead,
@@ -126,8 +125,6 @@ const defaultSyncPayload = `{
 }`;
 
 export const CRMPage = ({ auth, onLogout }) => {
-  const [mockPreview, setMockPreview] = useState({ leads_preview: [] });
-
   const [masterBoard, setMasterBoard] = useState({ stage_counts: {} });
   const [branchBoard, setBranchBoard] = useState({ stage_counts: {} });
   const [verticals, setVerticals] = useState([]);
@@ -184,9 +181,8 @@ export const CRMPage = ({ auth, onLogout }) => {
     setLoading(true);
     const canManageSheets = ["super_admin", "business_dev"].includes(role);
 
-    const [mockData, masterData, branchRows, leadRows, doctorRows, appointmentRows, verticalRows, sheetRows] =
+    const [masterData, branchRows, leadRows, doctorRows, appointmentRows, verticalRows, sheetRows] =
       await Promise.all([
-        safeCall(() => getRoleSelectionMock(), { leads_preview: [] }),
         safeCall(() => getMasterBoard(), { stage_counts: {} }),
         safeCall(() => getBranches(), []),
         safeCall(() =>
@@ -201,7 +197,6 @@ export const CRMPage = ({ auth, onLogout }) => {
         canManageSheets ? safeCall(() => getSheetConnections(), []) : Promise.resolve([]),
       ]);
 
-    setMockPreview(mockData);
     setMasterBoard(masterData);
     setBranches(branchRows);
     setLeads(leadRows);
@@ -433,6 +428,20 @@ export const CRMPage = ({ auth, onLogout }) => {
   const showPhysioBoard = role === "physio";
 
   const filteredAppointmentsForPhysioBoards = appointments;
+
+  const liveLeadPreview = useMemo(
+    () => ({
+      leads_preview: leads.slice(0, 5).map((lead) => ({
+        id: lead.id,
+        name: lead.name,
+        phone: lead.phone,
+        source_tab: lead.source_tab || lead.source_type,
+        stage: lead.stage,
+        vertical: lead.vertical,
+      })),
+    }),
+    [leads],
+  );
 
   return (
     <div className="min-h-screen bg-white px-4 py-6 md:px-8 md:py-10" data-testid="role-board-page">
@@ -773,11 +782,11 @@ export const CRMPage = ({ auth, onLogout }) => {
 
         <Card className="border-slate-200 bg-white" data-testid="mock-preview-card">
           <CardHeader>
-            <CardTitle className="text-base">Lead Source Preview (Instagram / Meta / Walkins)</CardTitle>
+            <CardTitle className="text-base">Live Lead Source Preview (Instagram / Meta / Walkins)</CardTitle>
           </CardHeader>
           <CardContent>
             <pre className="overflow-auto rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700" data-testid="mock-preview-json">
-              {JSON.stringify(mockPreview, null, 2)}
+              {JSON.stringify(liveLeadPreview, null, 2)}
             </pre>
           </CardContent>
         </Card>
