@@ -104,3 +104,12 @@ export const createHeadPhysio = async (payload) => (await api.post("/branch/head
 export const getDoctorCalendar = async (doctorId) => (await api.get(`/doctors/${doctorId}/calendar`)).data;
 export const addCalendarSlots = async (doctorId, payload) => (await api.post(`/doctors/${doctorId}/calendar-slots`, payload)).data;
 export const removeCalendarSlots = async (doctorId, payload) => (await api.post(`/doctors/${doctorId}/remove-slots`, payload)).data;
+
+export const getBranchFinance = async (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.fee_type) query.set("fee_type", params.fee_type);
+  if (params.start_date) query.set("start_date", params.start_date);
+  if (params.end_date) query.set("end_date", params.end_date);
+  if (params.search) query.set("search", params.search);
+  return (await api.get(`/branch/finance?${query.toString()}`)).data;
+};

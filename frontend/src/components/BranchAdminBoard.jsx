@@ -32,6 +32,7 @@ import {
   moveBranchStage,
 } from "@/lib/api";
 import { HeadPhysioCalendar } from "@/components/HeadPhysioCalendar";
+import { FinanceBoard } from "@/components/FinanceBoard";
 
 const BRANCH_STAGES = [
   "New Appointment",
@@ -95,6 +96,7 @@ export const BranchAdminBoard = ({ branchId }) => {
   const VIEW_TABS = [
     { key: "pipeline", label: "Patient Pipeline", icon: LayoutDashboard },
     { key: "head_physio", label: "Head Physio Calendar", icon: Stethoscope },
+    { key: "finance", label: "Finance", icon: CreditCard },
   ];
 
   return (
@@ -123,6 +125,8 @@ export const BranchAdminBoard = ({ branchId }) => {
 
       {activeView === "head_physio" ? (
         <HeadPhysioCalendar branchId={branchId} />
+      ) : activeView === "finance" ? (
+        <FinanceBoard />
       ) : (
         <>
           {/* Metric Strip */}
