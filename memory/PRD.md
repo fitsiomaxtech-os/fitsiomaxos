@@ -10,10 +10,11 @@ Build FITSIOMAX OS - multi-role SaaS for physiotherapy/fitness business with:
 
 ### Login & Auth
 - JWT-based auth with 6 roles, demo user dropdown for quick login
+- Password hashing with bcrypt (auto-upgrades plain-text passwords on login)
 
 ### Business Development Dashboard (5 Tabs)
 - Dashboard: Metrics, pipeline, source/branch breakdown, recent leads
-- Branches: Branch list + create form with admin user
+- Branches: Branch list + create form with admin user (Add/Edit/Delete)
 - Lead Master: Full leads table with qualify/assign
 - Google Sheet Connection: Create + mapping + JSON sync
 - Lead Source: Aggregation with stage breakdown
@@ -22,33 +23,40 @@ Build FITSIOMAX OS - multi-role SaaS for physiotherapy/fitness business with:
 - Stage metric cards (Total, New Lead, Qualified, Assigned)
 - Search bar, date filter, Kanban/List toggle, stage tabs
 - Add New Lead popup modal
-- **Lead Detail Modal** with 4 tabs (Overview, Remarks, Follow-up, Activity)
-- **Branch Picker Popup**: Click "Assigned to Branch" → radio-select from available branches
-- **Appointment Booking Flow**: Click "Appointment Booked" → date picker → Calendly-style time slots (08:00-20:30, 30-min) → doctor list with Available/Unavailable (low opacity) → Book
+- Lead Detail Modal with 4 tabs (Overview, Remarks, Follow-up, Activity)
+- Branch Picker Popup: Click "Assigned to Branch" -> radio-select from available branches
+- Appointment Booking Flow: Date picker -> Calendly-style time slots -> doctor list -> Book
+
+### Branch Admin Board
+- 8-stage Kanban pipeline: New Appointment -> Call & Confirm -> Head Physio Appointment -> Consultation Fee Collected -> Consultation Done -> Follow-up Package Upsell -> Package Paid -> Jr. Physio Assigned
+- Collect consultation/package fees, assign physios, move branch stages
 
 ### Header
 - Full-width, white background, sticky
 - FitsiomaxOS brand + role-specific title + "Hi {Name}" greeting
 
-### Backend Endpoints (v3)
-- Auth, Leads CRUD, Branches, Doctors, Appointments
-- Lead remarks, follow-ups, activity log, move-stage
-- BD summary, lead sources aggregation
-- Sheet connections, mapping, sync
+### Backend Architecture (Refactored Feb 2026)
+- Modular structure: server.py (entry), database.py, security.py, deps.py, seed.py
+- Schemas: schemas/v1.py, schemas/v2.py, schemas/v3.py
+- Routers: v3_auth, v3_config, v3_leads, v3_branch_admin, v3_appointments, v3_sheets, v3_dashboard
+- Legacy routers: v1.py, v2.py (preserved for backward compatibility)
+
+### Security
+- bcrypt password hashing via passlib
+- Auto-upgrade: plain-text passwords migrate to hashed on login
+- All new user creation uses hashed passwords
 
 ## Prioritized Backlog
 
 ### P0
-- Live Google Sheets OAuth flow
-- Branch Admin board refinement
+- Live Google Sheets OAuth flow for Business Dev role
 
 ### P1
-- Head Physio / Physio board refinement
-- Secure password hashing (currently plain text)
-- User-to-branch assignment UI
+- Head Physio board refinement (dedicated dashboard & workflow)
+- Physio board refinement (dedicated dashboard & workflow)
 
 ### P2
-- Backend refactoring (server.py 2400+ lines)
-- Frontend refactoring (CRMPage.jsx cleanup)
-- Visual weekly calendar for appointments
-- Auto-sync scheduler, notifications
+- Visual weekly calendar for Branch Admin appointments
+- Drag-and-drop on Kanban boards
+- Notification system for key events
+- Auto-sync scheduler for Google Sheets
