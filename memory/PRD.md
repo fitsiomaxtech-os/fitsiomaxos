@@ -85,6 +85,20 @@ Build FITSIOMAX OS with:
   - Book Appointment (indigo)
   - Complete (emerald)
 
+### Logo + Pre-sales Lead Module Enhancement
+- Added FITSIOMAX logo in top-left header and right-side profile/settings area.
+- Updated board title to **Pre - sale s Board**.
+- Added lead edit capability in pre-sales board (name, phone, email, notes, custom attributes).
+- Added custom field builder with attribute types:
+  - text
+  - number
+  - date
+  - select (comma options)
+- Added date range filters (from/to) in pre-sales board lead module.
+- Backend upgraded with:
+  - `PUT /api/v3/leads/{lead_id}` for lead editing
+  - date-range filtering support in `GET /api/v3/leads`
+
 ### Post-QA Fixes Applied
 - Fixed default seeded `branchadmin@fitsiomax.com` branch linkage (non-null branch_id).
 - Fixed `/api/v3/leads/{lead_id}/confirm` to enforce scoped update result and return 403/404 correctly.
@@ -98,6 +112,7 @@ Build FITSIOMAX OS with:
 - Dropdown retest (iteration 10): pass for immediate auto-login and manual login compatibility.
 - Pre-sales board UI retest (iteration 11): pass for fixed header + pre-sales-only Kanban/List/stage-tab flow.
 - Full-width + multicolor validation (iteration 12): pass for requested UI updates without functional regressions.
+- Iteration 13 validation: pass for logo placement, board title update, lead edit, custom fields, and date-filter behavior.
 - Backend regression files created by testing agent:
   - `/app/backend/tests/test_fitsiomax_v3_seeded_role_integrity.py`
   - `/app/backend/tests/test_fitsiomax_v3_iteration9_retest.py`
