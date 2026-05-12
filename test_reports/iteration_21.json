@@ -1,0 +1,42 @@
+{
+  "summary": "Iteration 21 — Full multi-role session lifecycle smoke + functional test. Backend: 31/31 pytest passing (auth for all 6 roles, Head Physio board, Branch Admin recommend/assign/jr-physio, Physio board today/calendar/patients/complete-session/weekly-assessment, Patient view token endpoint + no-leak check, Finance board with filters, lead pipeline regression, auth-required negative tests). Frontend: Login page renders cleanly, Super Admin login → role-based dashboard renders successfully and CRMPage.jsx mounts with NO JSX parse errors (the line-858 stray `)}` fix is verified). One real backend bug found and fixed: v3_physio_board.physio_calendar used JS-style `str.padStart()` which would 500 every call (also fixed below).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/v3/physio/calendar", "issue": "Used JS-style `str(m).padStart(2, '0')` in f-string — would throw AttributeError on every call. FIXED by replacing with `str(m).zfill(2)` and removing the dead duplicate line."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "CRMPage role dashboards", "issues": ["Console hydration warning: `<span>` cannot be a child of `<option>` — appears coming from a dev tooling instrumentation wrapper on `<option>{lead.name}</option>` inside the appointment lead `<select>`. Non-blocking but should be cleaned up by simplifying option text to plain string."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_session_lifecycle_iteration21.py",
+    "/app/test_reports/pytest/pytest_results_iteration21.xml"
+  ],
+  "action_items": [
+    "(Optional) Review the `<select><option>` rendering on the Super Admin appointment-booking dropdown in CRMPage.jsx around line 805 — current code triggers a React hydration warning (`<span>` inside `<option>`). Likely the option content is being wrapped by some instrumentation HOC; simplify to plain text.",
+    "Confirm the `recommended_weeks` flag on patient-view: currently the public endpoint EXPOSES `recommended_weeks` but hides `head_physio_notes/suggestions`. Verify product wants that to be visible to patient."
+  ],
+  "critical_code_review_comments": [
+    "[BUG FIXED] /app/backend/routers/v3_physio_board.py used JS API `str.padStart()` — would 500 every physio/calendar call. Replaced with Python `zfill(2)`.",
+    "v3_auth.py invalidates ALL prior sessions on login (sessions.delete_many on user_id). This means a user can only have one device/session at a time. Acceptable for the demo, but flag for the team — confused our test fixtures.",
+    "v3_patient_view.py correctly excludes head_physio_notes, head_physio_suggestions, head_physio_id, consultation_fee, package_amount from the patient-facing payload. ✅ No internal-data leak.",
+    "v3_session_assign.assign_sessions uses recommendation.sessions_per_week to compute week_number — fine, but the fallback of 3 is implicit. Document this.",
+    "v3_physio_board.physio_today / calendar / patients all fall back to the FIRST physio doctor in branch when the logged-in physio user has no doctor record — this is forgiving for demo but could mask misconfigured users in prod."
+  ],
+  "updated_files": [
+    "/app/backend/routers/v3_physio_board.py",
+    "/app/backend/tests/test_session_lifecycle_iteration21.py"
+  ],
+  "success_rate": {"backend": "100% (31/31)", "frontend": "Login + role dashboard render: PASS for Super Admin via UI; remaining 5 roles confirmed via backend auth tests (logout-then-login UI flow was not exercised). No JSX parse errors."},
+  "test_credentials": "see /app/memory/test_credentials.md — six demo users used as-is",
+  "seed_data_creation": "Created TEST_Patient_*, TEST_JrPhysio_* leads/doctors via /api/v3/leads/manual and /api/v3/branch/jr-physios. Patient token generated via assign-sessions used to test /api/v3/patient/view/{token}.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend test file: /app/backend/tests/test_session_lifecycle_iteration21.py covers all v3 endpoints introduced this iteration (head-physio board, physio board, session-assign, patient-view, finance). It's structured to handle the session-invalidation-on-login quirk by re-logging-in helpers per fixture. Use _login() helper, never reuse a token across the parametrized login test. Real bug fixed: padStart → zfill in v3_physio_board.physio_calendar. The auth flow returns `token` (uuid) under `data.token` — not `access_token`. UI dev hydration warning about <span> inside <option> remains in CRMPage.jsx ~line 805.",
+  "rca of the issue": "physio/calendar 500 RCA: line 113 in routers/v3_physio_board.py used `str(m).padStart(2, '0')` — JS method, not Python — inside an f-string. Python str has no `padStart` attribute, so attribute lookup raised AttributeError before the override on the next line could execute. Reproduction: hit GET /api/v3/physio/calendar with any physio token → 500. Mitigation: replaced with `str(m).zfill(2)` and removed the dead line; verified via test_physio_calendar now PASS."
+}

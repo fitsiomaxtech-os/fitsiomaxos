@@ -110,7 +110,6 @@ async def physio_calendar(
     now = datetime.now(timezone.utc)
     m = month or now.month
     y = year or now.year
-    prefix = f"{y}-{str(m).padStart(2, '0') if isinstance(m, int) else m}"
     prefix = f"{y}-{str(m).zfill(2)}"
 
     sessions = await v3_col("sessions").find(

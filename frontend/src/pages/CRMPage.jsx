@@ -855,7 +855,6 @@ export const CRMPage = ({ auth, onLogout }) => {
                   </form>
                 </CardContent>
               </Card>
-            )}
 
             <Card className="border-slate-200 bg-white" data-testid="appointments-card">
               <CardHeader>
