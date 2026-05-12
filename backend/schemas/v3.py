@@ -247,3 +247,37 @@ class V3CalendarSlotsInput(BaseModel):
 
 class V3RemoveSlotsInput(BaseModel):
     slot_times: List[str]
+
+
+
+class V3PackageRecommendInput(BaseModel):
+    lead_id: str
+    recommended_weeks: int
+    sessions_per_week: int
+    notes: Optional[str] = ""
+
+
+class V3AssignSessionsInput(BaseModel):
+    lead_id: str
+    physio_id: str
+    slot_times: List[str]
+
+
+class V3CompleteSessionInput(BaseModel):
+    remarks: str
+
+
+class V3JrPhysioWeeklyInput(BaseModel):
+    jr_physio_notes: str
+
+
+class V3HeadPhysioReviewInput(BaseModel):
+    head_physio_notes: str
+    head_physio_suggestions: str
+
+
+class V3CreateJrPhysioInput(BaseModel):
+    full_name: str
+    email: str
+    password: str
+    specialization: Optional[str] = ""

@@ -46,6 +46,8 @@ import { toast, Toaster } from "@/components/ui/sonner";
 import { BusinessLeadsDashboard } from "@/components/BusinessLeadsDashboard";
 import { PreSalesBoard } from "@/components/PreSalesBoard";
 import { BranchAdminBoard } from "@/components/BranchAdminBoard";
+import { HeadPhysioBoard } from "@/components/HeadPhysioBoard";
+import { PhysioBoard } from "@/components/PhysioBoard";
 
 const ROLE_META = {
   super_admin: { label: "Super Admin", icon: ShieldCheck },
@@ -782,6 +784,14 @@ export const CRMPage = ({ auth, onLogout }) => {
           <BranchAdminBoard branchId={auth?.user?.branch_id} />
         )}
 
+        {showHeadPhysioBoard && (
+          <HeadPhysioBoard />
+        )}
+
+        {showPhysioBoard && (
+          <PhysioBoard />
+        )}
+
         {showSuperAdminBoard && (
           <Card className="border-slate-200 bg-white" data-testid="branch-booking-card">
             <CardHeader>
@@ -812,10 +822,9 @@ export const CRMPage = ({ auth, onLogout }) => {
           </Card>
         )}
 
-        {(showSuperAdminBoard || showHeadPhysioBoard || showPhysioBoard) && (
+        {showSuperAdminBoard && (
           <div className="grid gap-4 lg:grid-cols-2" data-testid="doctor-appointments-section">
-            {showSuperAdminBoard && (
-              <Card className="border-slate-200 bg-white" data-testid="doctor-setup-card">
+            <Card className="border-slate-200 bg-white" data-testid="doctor-setup-card">
                 <CardHeader>
                   <CardTitle className="text-base">Head Physio / Physio Setup</CardTitle>
                 </CardHeader>

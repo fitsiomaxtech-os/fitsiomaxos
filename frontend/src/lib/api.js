@@ -113,3 +113,22 @@ export const getBranchFinance = async (params = {}) => {
   if (params.search) query.set("search", params.search);
   return (await api.get(`/branch/finance?${query.toString()}`)).data;
 };
+
+export const getHPMyPatients = async () => (await api.get("/head-physio/my-patients")).data;
+export const hpRecommendPackage = async (payload) => (await api.post("/head-physio/recommend-package", payload)).data;
+export const hpGetSessions = async (leadId) => (await api.get(`/head-physio/sessions/${leadId}`)).data;
+export const hpGetAssessments = async (leadId) => (await api.get(`/head-physio/weekly-assessments/${leadId}`)).data;
+export const hpWeeklyReview = async (leadId, week, payload) => (await api.post(`/head-physio/weekly-review/${leadId}/${week}`, payload)).data;
+
+export const physioToday = async () => (await api.get("/physio/today")).data;
+export const physioCalendar = async (month, year) => (await api.get(`/physio/calendar?month=${month}&year=${year}`)).data;
+export const physioPatients = async () => (await api.get("/physio/patients")).data;
+export const physioSessions = async (leadId) => (await api.get(`/physio/sessions/${leadId}`)).data;
+export const physioCompleteSession = async (sessionId, payload) => (await api.post(`/physio/sessions/${sessionId}/complete`, payload)).data;
+export const physioWeeklyAssessment = async (leadId, week, payload) => (await api.post(`/physio/weekly-assessment/${leadId}/${week}`, payload)).data;
+
+export const getBranchRecommendations = async () => (await api.get("/branch/package-recommendations")).data;
+export const assignSessions = async (payload) => (await api.post("/branch/assign-sessions", payload)).data;
+export const createJrPhysio = async (payload) => (await api.post("/branch/jr-physios", payload)).data;
+
+export const patientView = async (token) => (await api.get(`/patient/view/${token}`)).data;
