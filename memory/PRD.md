@@ -38,11 +38,21 @@ Build FITSIOMAX OS - multi-role SaaS for physiotherapy/fitness business with:
 - Transactions table: Patient, Type badge, Amount, Details (weeks), Collected By, Date, Stage
 - Footer with transaction count + total
 
+### Multi-Role Session Lifecycle (NEW - Feb 2026) ✅
+- Head Physio Board: My Patients + Weekly Reviews tabs. Recommend package (weeks + sessions/week + amount), file weekly assessment with internal notes hidden from patient.
+- Branch Admin: package-recommendations panel + Assign Sessions to Jr. Physio + Create Jr. Physio account.
+- Jr. Physio Board (PhysioBoard): Today / Calendar / Patients views. Complete a session with remarks. Submit weekly self-assessment.
+- Patient View token endpoint (`/api/v3/patient/view/{token}`): patient-facing JSON only — strips `head_physio_notes`, `head_physio_suggestions`, `head_physio_id`, `consultation_fee`, `package_amount`. Validated by iteration_21 tests for no internal-data leak.
+
 ### Backend Architecture (Modular - Feb 2026)
 - server.py (entry), database.py, security.py, deps.py, seed.py, constants.py, utils.py
 - Schemas: schemas/v1.py, v2.py, v3.py
-- Routers: v3_auth, v3_config, v3_leads, v3_branch_admin, v3_appointments, v3_sheets, v3_dashboard, v3_head_physio, v3_finance
+- Routers: v3_auth, v3_config, v3_leads, v3_branch_admin, v3_appointments, v3_sheets, v3_dashboard, v3_head_physio, v3_finance, v3_head_physio_board, v3_physio_board, v3_session_assign, v3_patient_view
 - Legacy: v1.py, v2.py
+- Tests: /app/backend/tests/test_session_lifecycle_iteration21.py (31/31 green)
+
+### Deployment
+- `/app/memory/DEPLOYMENT_PLAYBOOK.md` saved — Hostinger VPS + GitHub + PM2 + Nginx + Let's Encrypt recipe.
 
 ## Prioritized Backlog
 
@@ -50,8 +60,8 @@ Build FITSIOMAX OS - multi-role SaaS for physiotherapy/fitness business with:
 - Live Google Sheets OAuth flow for Business Dev role
 
 ### P1
-- Head Physio dedicated board (login as Head Physio, see appointments, manage consultations)
-- Physio dedicated board (login as Jr. Physio, see assigned patients)
+- Hostinger VPS deployment: domain DNS → VPS, then run `DEPLOYMENT_PLAYBOOK.md` steps; user prefers manual SSH not from Emergent pod
+- Optional cleanup: dev hydration warning `<span>` inside `<option>` on CRMPage.jsx Super Admin booking dropdown
 
 ### P2
 - Visual weekly calendar for Branch Admin
