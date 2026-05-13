@@ -48,6 +48,7 @@ import { PreSalesBoard } from "@/components/PreSalesBoard";
 import { BranchAdminBoard } from "@/components/BranchAdminBoard";
 import { HeadPhysioBoard } from "@/components/HeadPhysioBoard";
 import { PhysioBoard } from "@/components/PhysioBoard";
+import { MarketingBoard } from "@/components/marketing/MarketingBoard";
 
 const ROLE_META = {
   super_admin: { label: "Super Admin", icon: ShieldCheck },
@@ -228,6 +229,7 @@ export const CRMPage = ({ auth, onLogout }) => {
 
   const [preSalesStageTab, setPreSalesStageTab] = useState("All");
   const [preSalesViewType, setPreSalesViewType] = useState("kanban");
+  const [superAdminView, setSuperAdminView] = useState("master");
 
   const safeCall = async (fn, fallback) => {
     try {
@@ -637,11 +639,22 @@ export const CRMPage = ({ auth, onLogout }) => {
 
         <div className="w-full space-y-6 px-6 py-6">
 
+        {showSuperAdminBoard && (
+          <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-2" data-testid="super-admin-nav">
+            <button onClick={() => setSuperAdminView("master")} className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition ${superAdminView === "master" ? "bg-sky-600 text-white" : "text-slate-600 hover:bg-slate-100"}`} data-testid="super-admin-tab-master">Master View</button>
+            <button onClick={() => setSuperAdminView("marketing")} className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition ${superAdminView === "marketing" ? "bg-sky-600 text-white" : "text-slate-600 hover:bg-slate-100"}`} data-testid="super-admin-tab-marketing">Marketing Board</button>
+          </div>
+        )}
+
+        {showSuperAdminBoard && superAdminView === "marketing" && (
+          <MarketingBoard branches={branches} />
+        )}
+
         {showPreSalesBoard && (
           <PreSalesBoard />
         )}
 
-        {(showSuperAdminBoard) && (
+        {(showSuperAdminBoard && superAdminView === "master") && (
           <Card className="border-slate-200 bg-white" data-testid="top-board-card">
             <CardHeader>
               <CardTitle className="text-base text-slate-900" data-testid="top-board-title">
@@ -665,7 +678,7 @@ export const CRMPage = ({ auth, onLogout }) => {
           <BusinessLeadsDashboard />
         )}
 
-        {showSuperAdminBoard && (
+        {showSuperAdminBoard && superAdminView === "master" && (
           <div className="grid gap-4 lg:grid-cols-2" data-testid="super-admin-board-section">
             <Card className="border-slate-200 bg-white" data-testid="super-admin-vertical-card">
               <CardHeader>
@@ -707,7 +720,7 @@ export const CRMPage = ({ auth, onLogout }) => {
           </div>
         )}
 
-        {showSuperAdminBoard && (
+        {showSuperAdminBoard && superAdminView === "master" && (
           <Card className="border-slate-200 bg-white" data-testid="lead-master-card">
             <CardHeader>
               <CardTitle className="text-base">Lead Master Board</CardTitle>
@@ -792,7 +805,7 @@ export const CRMPage = ({ auth, onLogout }) => {
           <PhysioBoard />
         )}
 
-        {showSuperAdminBoard && (
+        {showSuperAdminBoard && superAdminView === "master" && (
           <Card className="border-slate-200 bg-white" data-testid="branch-booking-card">
             <CardHeader>
               <CardTitle className="text-base">Branch Booking Board</CardTitle>
@@ -822,7 +835,7 @@ export const CRMPage = ({ auth, onLogout }) => {
           </Card>
         )}
 
-        {showSuperAdminBoard && (
+        {showSuperAdminBoard && superAdminView === "master" && (
           <div className="grid gap-4 lg:grid-cols-2" data-testid="doctor-appointments-section">
             <Card className="border-slate-200 bg-white" data-testid="doctor-setup-card">
                 <CardHeader>

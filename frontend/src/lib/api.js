@@ -132,3 +132,26 @@ export const assignSessions = async (payload) => (await api.post("/branch/assign
 export const createJrPhysio = async (payload) => (await api.post("/branch/jr-physios", payload)).data;
 
 export const patientView = async (token) => (await api.get(`/patient/view/${token}`)).data;
+
+
+// Marketing Module
+export const mkDashboard = async () => (await api.get("/marketing/dashboard")).data;
+export const mkGetDistribution = async () => (await api.get("/marketing/distribution-settings")).data;
+export const mkPatchDistribution = async (payload) => (await api.patch("/marketing/distribution-settings", payload)).data;
+export const mkRefreshDistribution = async () => (await api.post("/marketing/distribution-settings/refresh")).data;
+export const mkGetTeam = async () => (await api.get("/marketing/team-members")).data;
+export const mkCreateTeamMember = async (payload) => (await api.post("/marketing/team-members", payload)).data;
+export const mkAllLeads = async (params = {}) => {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== "") q.set(k, v); });
+  return (await api.get(`/marketing/all-leads?${q.toString()}`)).data;
+};
+export const mkAssignLead = async (leadId, assignedTo) => (await api.post(`/marketing/assign-lead/${leadId}?assigned_to=${assignedTo}`)).data;
+export const mkDeleteLead = async (leadId) => (await api.delete(`/marketing/leads/${leadId}`)).data;
+export const mkBulkDelete = async (lead_ids) => (await api.post("/marketing/leads/bulk-delete", { lead_ids })).data;
+export const mkGetSources = async () => (await api.get("/marketing/sources")).data;
+export const mkCreateSource = async (payload) => (await api.post("/marketing/sources", payload)).data;
+export const mkUpdateSource = async (sourceId, payload) => (await api.patch(`/marketing/sources/${sourceId}`, payload)).data;
+export const mkDeleteSource = async (sourceId) => (await api.delete(`/marketing/sources/${sourceId}`)).data;
+export const mkSyncSource = async (sourceId, rows) => (await api.post(`/marketing/sources/${sourceId}/sync`, { rows })).data;
+export const mkPerformance = async () => (await api.get("/marketing/performance")).data;

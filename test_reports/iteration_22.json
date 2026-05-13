@@ -1,0 +1,41 @@
+{
+  "summary": "Iteration 22 — End-to-end testing of the new Marketing Module inside Super Admin board. Backend: 11/11 pytest passing for all listed flows (dashboard role-gating, distribution-settings GET/PATCH/refresh singleton, team-members GET+POST with bcrypt+409-on-dup, sources CRUD with FIELD_ALIASES auto-mapping + custom_fields detection + spreadsheet_id extraction, sync with phone_normalized dedupe, round-robin assignment cycling through pre_sales team, all-leads filter pagination, performance funnel of 6 stages, regression on master board + all 6 role logins). Frontend: Super Admin login → both 'Master View' and 'Marketing Board' tabs visible. Clicking Marketing Board mounts MarketingBoard with all 5 sub-tabs (overview/lead_sources/all_leads/team/performance) and every documented data-testid renders. Add-Source dialog creates a source card. Switching back to 'Master View' hides marketing-board and restores the original Super Admin Master View (Master Flow Snapshot, KPIs, kanban). Pre-sales role does NOT see the super-admin-tab-marketing button — verified gating. No JSX/render errors introduced.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Super Admin CRMPage (pre-existing, not from this iteration)", "issues": ["Console hydration warning: <span> cannot be a child of <option> — still present from iteration 21. Caused by a dev-instrumentation wrapper on <option>{lead.name}</option> in the appointment-lead <select>. Non-blocking."]},
+      {"screen": "Pre-sales master view (pre-existing, not from this iteration)", "issues": ["Two 403 console errors when Pre-sales role loads CRMPage — page still requests admin-only endpoints. Page renders fine, but the calls should be role-gated client-side to avoid console noise."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_marketing_iteration22.py",
+    "/app/test_reports/pytest/pytest_results_iteration22.xml"
+  ],
+  "action_items": [
+    "(Optional, carried over) Suppress <span> inside <option> hydration warning in CRMPage appointment lead select.",
+    "(Optional) Gate the admin-only API calls in CRMPage so non-super_admin roles don't trigger 403s on first paint."
+  ],
+  "critical_code_review_comments": [
+    "v3_marketing.py round_robin_assign mutates `pre_sales_current_index` BEFORE the lead insert succeeds — a downstream lead insert failure would still advance the index, eventually skewing distribution. Low risk for current happy path; consider doing the index advance after successful insert.",
+    "marketing_dashboard uses leads.source_tab for grouping but sync writes both source_tab (=source.name) — works, but be careful if pre-existing legacy leads have null source_tab (the code already falls back to 'unknown' which is correct).",
+    "Add Source endpoint trusts whatever the client passes in `headers`. Auto-mapping uses first matching alias (good). Custom fields detection compares against mapping.values() — that's fine but if user re-uploads with different casing, mapping will not match. Acceptable for v1.",
+    "phone_normalized is set on every new lead inserted via /sources/{id}/sync, but legacy leads created via other routes do NOT have this field — meaning dedupe only spans marketing-synced leads. Documented behavior, not a bug.",
+    "/api/v3/marketing/team-members POST does NOT validate password strength or email format beyond Pydantic str — acceptable for internal tool.",
+    "Source delete is hard-delete and does NOT cascade-delete its previously synced leads. By design (leads survive the source) but worth flagging in docs."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_marketing_iteration22.py"
+  ],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100% (all data-testids render; role gating verified; master-view regression OK)"},
+  "test_credentials": "Used /app/memory/test_credentials.md as-is (super_admin admin@fitsiomax.com/admin123, pre_sales presales@fitsiomax.com/presales123, plus other 4 roles).",
+  "seed_data_creation": "Tests created TEST_PreSales_<rand> team member, TEST_Meta_<rand> marketing source, three TEST_L<i> leads synced via /sources/{id}/sync, and cleaned them up via bulk-delete. A TEST_UI_Source remains in DB from the UI smoke test (harmless).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Marketing module is fully wired end-to-end. Backend test file: /app/backend/tests/test_marketing_iteration22.py — auth via /api/v3/auth/login returns data.token (uuid). v3_auth.py invalidates prior sessions on each login, so reuse a single token per role within a test or re-login. Frontend session is stored under localStorage key 'physiofit_crm_session' (NOT fitsiomax_session). MarketingBoard component lives at /app/frontend/src/components/marketing/MarketingBoard.jsx; CRMPage gates super-admin tabs via superAdminView state (default 'master'). Pre-existing console warnings (<span> in <option>, two 403s for non-admin roles) are not introduced by this iteration and were already flagged in iteration_21.",
+  "rca of the issue": "No new bugs found in this iteration. All marketing endpoints behave per spec, role gating works, frontend integration is intact, and the master-view regression check confirms CRMPage restructure (superAdminView toggle) did not break the existing Master View UX (verified KPIs, kanban columns, branch cards still rendered after toggling back)."
+}
