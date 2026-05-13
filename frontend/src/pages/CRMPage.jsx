@@ -573,20 +573,6 @@ export const CRMPage = ({ auth, onLogout }) => {
     [],
   );
 
-  const liveLeadPreview = useMemo(
-    () => ({
-      leads_preview: leads.slice(0, 5).map((lead) => ({
-        id: lead.id,
-        name: lead.name,
-        phone: lead.phone,
-        source_tab: lead.source_tab || lead.source_type,
-        stage: lead.stage,
-        vertical: lead.vertical,
-      })),
-    }),
-    [leads],
-  );
-
   return (
     <div className="min-h-screen bg-slate-50" data-testid="role-board-page">
       <Toaster richColors position="top-right" />
@@ -896,18 +882,6 @@ export const CRMPage = ({ auth, onLogout }) => {
           </div>
         )}
 
-        {!showBusinessDevBoard && !showPreSalesBoard && !showBranchBoard && (
-          <Card className="border-slate-200 bg-white" data-testid="mock-preview-card">
-            <CardHeader>
-              <CardTitle className="text-base">Live Lead Source Preview (Instagram / Meta / Walkins)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <pre className="overflow-auto rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700" data-testid="mock-preview-json">
-                {JSON.stringify(liveLeadPreview, null, 2)}
-              </pre>
-            </CardContent>
-          </Card>
-        )}
         </div>
       </div>
 
