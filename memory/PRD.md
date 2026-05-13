@@ -44,12 +44,23 @@ Build FITSIOMAX OS - multi-role SaaS for physiotherapy/fitness business with:
 - Jr. Physio Board (PhysioBoard): Today / Calendar / Patients views. Complete a session with remarks. Submit weekly self-assessment.
 - Patient View token endpoint (`/api/v3/patient/view/{token}`): patient-facing JSON only — strips `head_physio_notes`, `head_physio_suggestions`, `head_physio_id`, `consultation_fee`, `package_amount`. Validated by iteration_21 tests for no internal-data leak.
 
+### Marketing Module (NEW - Feb 2026) ✅
+- New Super Admin top-level tab ("Marketing Board") alongside the existing "Master View" — no router change.
+- 5 sub-tabs: Overview · Lead Sources · All Leads · Team & Distribution · Performance.
+- **Overview**: 4 KPI cards (pre-sales leads, sales leads, active sources, conversion %), Leads-by-Source bar list, Recent Leads table.
+- **Lead Sources**: multi-source CSV/Sheet ingestion — paste headers, auto-map to standard Fitsiomax fields (name, phone, email, vertical, condition, age, preferred_branch, budget, notes). Sync via JSON rows; dedupe by phone last-10-digits (`phone_normalized`); auto-run round-robin assignment.
+- **All Leads**: filter by stage_type / source / assignee / search; bulk delete; per-row reassign; pagination; MaskedContact reveals phone/email on hover.
+- **Team & Distribution**: round-robin engine (Tier1=pre_sales, Tier2=branch_admin); Auto-Distribute toggle; "Refresh Team from Users" auto-detects role members; create new team member with bcrypt-hashed password.
+- **Performance**: Conversion funnel using Fitsiomax stages, leads/agent (pre-sales), deals-closed/agent (sales).
+- Backend: `/app/backend/routers/v3_marketing.py` — 16 endpoints. New Mongo collections: `marketing_sources`, `marketing_settings` (singleton).
+- 11/11 backend tests + frontend smoke + role-gating + master-view regression (iteration_22).
+
 ### Backend Architecture (Modular - Feb 2026)
 - server.py (entry), database.py, security.py, deps.py, seed.py, constants.py, utils.py
 - Schemas: schemas/v1.py, v2.py, v3.py
-- Routers: v3_auth, v3_config, v3_leads, v3_branch_admin, v3_appointments, v3_sheets, v3_dashboard, v3_head_physio, v3_finance, v3_head_physio_board, v3_physio_board, v3_session_assign, v3_patient_view
+- Routers: v3_auth, v3_config, v3_leads, v3_branch_admin, v3_appointments, v3_sheets, v3_dashboard, v3_head_physio, v3_finance, v3_head_physio_board, v3_physio_board, v3_session_assign, v3_patient_view, v3_marketing
 - Legacy: v1.py, v2.py
-- Tests: /app/backend/tests/test_session_lifecycle_iteration21.py (31/31 green)
+- Tests: test_session_lifecycle_iteration21.py, test_marketing_iteration22.py (all green)
 
 ### Deployment
 - `/app/memory/DEPLOYMENT_PLAYBOOK.md` saved — Hostinger VPS + GitHub + PM2 + Nginx + Let's Encrypt recipe.
@@ -57,11 +68,13 @@ Build FITSIOMAX OS - multi-role SaaS for physiotherapy/fitness business with:
 ## Prioritized Backlog
 
 ### P0
-- Live Google Sheets OAuth flow for Business Dev role
+- Domain → VPS connection (user is starting deployment; awaiting domain name + VPS IP)
+- Live Google Sheets OAuth flow for Business Dev role (currently CSV/JSON sync only)
 
 ### P1
-- Hostinger VPS deployment: domain DNS → VPS, then run `DEPLOYMENT_PLAYBOOK.md` steps; user prefers manual SSH not from Emergent pod
-- Optional cleanup: dev hydration warning `<span>` inside `<option>` on CRMPage.jsx Super Admin booking dropdown
+- Patient-facing magic-link email (Resend / SendGrid) when Head Physio recommends a package
+- Marketing module: round-robin index advance after successful insert (currently advances before)
+- Hide super-admin-only API calls from non-super_admin roles (currently triggers 403 console warnings on Pre-sales view)
 
 ### P2
 - Visual weekly calendar for Branch Admin
