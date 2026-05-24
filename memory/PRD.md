@@ -44,6 +44,16 @@ Build FITSIOMAX OS - multi-role SaaS for physiotherapy/fitness business with:
 - Jr. Physio Board (PhysioBoard): Today / Calendar / Patients views. Complete a session with remarks. Submit weekly self-assessment.
 - Patient View token endpoint (`/api/v3/patient/view/{token}`): patient-facing JSON only — strips `head_physio_notes`, `head_physio_suggestions`, `head_physio_id`, `consultation_fee`, `package_amount`. Validated by iteration_21 tests for no internal-data leak.
 
+### Comprehensive Add-Lead Modal + Custom Fields (NEW - Feb 2026) ✅
+- Pre-Sales CRM "Create Lead" now opens a full comprehensive modal mapped to physio patients (matches user's screenshot):
+  - Standard: Name*, Source, Email, Phone*, Alternative Phone, Address, City, State.
+  - Patient Details: Department (Offline Physio / Online Physio / Fitness), Condition, Months of Pain, Age, Gender, Occupation, Expected Consultation Date.
+  - When Department=Offline Physio, branch radio cards appear with Branch Admin name.
+  - **+ Add Field** (super_admin only) to create a custom field on the fly; **Manage** dialog to edit/delete custom fields.
+- Backend: new `/api/v3/lead-fields` CRUD (collection `custom_lead_fields`). Slugified keys (`Insurance Provider` → `insurance_provider`). Field types: text/textarea/number/date/email/phone/select.
+- Extended `V3LeadCreate` + `V3LeadOut` + `V3LeadUpdate` with `alternative_phone, address, city, state, condition`. `extra_fields` upgraded to `Dict[str, Any]` so numeric/object custom values persist.
+- Tested in iter 25: backend 13/13 PASS · frontend ~95% PASS · zero new bugs.
+
 ### HR Module (NEW - Feb 2026) ✅
 - New Super Admin top tab **"HR Admin"** (5th tab alongside Master / Marketing / Pre-Sales / Pipeline Stages).
 - 3 sub-tabs: **Dashboard** (5 KPI cards + Monthly Salary Budget + Department Strength grid), **Employees** (Active/Left filter + search + 5-tab Add/Edit modal Personal/Employment/ID & Docs/Address & Emergency/Salary & Bank), **Roles & Credentials** (user table with linked-employee chip, role select, password reset modal, deactivate, Create User dialog that links to any employee + bcrypt-hashed password).

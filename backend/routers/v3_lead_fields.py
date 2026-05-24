@@ -47,7 +47,7 @@ async def list_custom_fields(_: V3UserOut = Depends(v3_current_user)):
 
 @router.post("")
 async def create_custom_field(payload: FieldCreate, _: V3UserOut = Depends(v3_require_roles("super_admin"))):
-    key = payload.key or _slugify(payload.label)
+    key = _slugify(payload.key) if payload.key else _slugify(payload.label)
     existing = await v3_col("custom_lead_fields").find_one({"key": key}, {"_id": 0, "id": 1})
     if existing:
         raise HTTPException(status_code=409, detail=f"Field key '{key}' already exists")
