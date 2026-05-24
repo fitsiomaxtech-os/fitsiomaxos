@@ -190,6 +190,14 @@ export const hrEmployees = async (params = {}) => {
   Object.entries(params).forEach(([k, v]) => { if (v) q.set(k, v); });
   return (await api.get(`/hr/employees${q.toString() ? `?${q.toString()}` : ""}`)).data;
 };
+
+// Branch Management
+export const bmList = async () => (await api.get("/branch-mgmt")).data;
+export const bmCreateWithExistingAdmin = async (payload) => (await api.post("/branch-mgmt/with-existing-admin", payload)).data;
+export const bmReassignAdmin = async (branchId, admin_user_id) => (await api.patch(`/branch-mgmt/${branchId}/admin`, { admin_user_id })).data;
+export const bmPerformance = async (branchId) => (await api.get(`/branch-mgmt/${branchId}/performance`)).data;
+export const bmPerformanceSummary = async () => (await api.get("/branch-mgmt/performance-summary")).data;
+
 export const hrCreateEmployee = async (payload) => (await api.post("/hr/employees", payload)).data;
 export const hrUpdateEmployee = async (id, payload) => (await api.patch(`/hr/employees/${id}`, payload)).data;
 export const hrDeleteEmployee = async (id) => (await api.delete(`/hr/employees/${id}`)).data;

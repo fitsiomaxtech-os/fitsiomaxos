@@ -5,7 +5,7 @@ import logging
 
 from database import client
 from seed import ensure_v1_seed_data, v2_seed, v3_seed
-from routers import v1, v2, v3_auth, v3_config, v3_leads, v3_branch_admin, v3_appointments, v3_sheets, v3_dashboard, v3_head_physio, v3_finance, v3_head_physio_board, v3_physio_board, v3_session_assign, v3_patient_view, v3_marketing, v3_stages, v3_hr, v3_lead_fields
+from routers import v1, v2, v3_auth, v3_config, v3_leads, v3_branch_admin, v3_appointments, v3_sheets, v3_dashboard, v3_head_physio, v3_finance, v3_head_physio_board, v3_physio_board, v3_session_assign, v3_patient_view, v3_marketing, v3_stages, v3_hr, v3_lead_fields, v3_branch_mgmt
 
 app = FastAPI()
 
@@ -28,6 +28,7 @@ app.include_router(v3_marketing.router)
 app.include_router(v3_stages.router)
 app.include_router(v3_hr.router)
 app.include_router(v3_lead_fields.router)
+app.include_router(v3_branch_mgmt.router)
 
 app.add_middleware(
     CORSMiddleware,
