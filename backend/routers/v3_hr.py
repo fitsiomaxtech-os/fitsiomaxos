@@ -84,6 +84,18 @@ class UserAccountCreate(BaseModel):
     branch_id: Optional[str] = None
 
 
+async def _next_emp_code() -> str:
+    last = await v3_col("employees").find({"employee_code": {"$regex": "^EMP[0-9]+$"}}, {"_id": 0, "employee_code": 1}).sort("employee_code", -1).limit(1).to_list(1)
+    if last:
+        try:
+            n = int(last[0]["employee_code"][3:]) + 1
+        except Exception:
+            n = (await v3_col("employees").count_documents({})) + 1
+    else:
+        n = 1
+    return f"EMP{n:04d}"
+
+
 # ---------- Dashboard ----------
 
 @router.get("/dashboard")
@@ -119,7 +131,7 @@ async def hr_dashboard(_: V3UserOut = Depends(v3_require_roles("super_admin", "m
 
 # ---------- Employees CRUD ----------
 
-async def _next_emp_code() -> str:
+async def _next_emp_code_legacy() -> str:
     cnt = await v3_col("employees").count_documents({})
     return f"EMP{(cnt + 1):04d}"
 
@@ -191,6 +203,8 @@ async def list_users(search: Optional[str] = None, role: Optional[str] = None, _
 
 @router.post("/users")
 async def create_user_account(payload: UserAccountCreate, _: V3UserOut = Depends(v3_require_roles("super_admin"))):
+    if len(payload.password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
     existing = await v3_col("users").find_one({"email": payload.email}, {"_id": 0, "id": 1})
     if existing:
         raise HTTPException(status_code=409, detail="Email already in use")

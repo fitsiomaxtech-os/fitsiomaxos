@@ -44,6 +44,15 @@ Build FITSIOMAX OS - multi-role SaaS for physiotherapy/fitness business with:
 - Jr. Physio Board (PhysioBoard): Today / Calendar / Patients views. Complete a session with remarks. Submit weekly self-assessment.
 - Patient View token endpoint (`/api/v3/patient/view/{token}`): patient-facing JSON only — strips `head_physio_notes`, `head_physio_suggestions`, `head_physio_id`, `consultation_fee`, `package_amount`. Validated by iteration_21 tests for no internal-data leak.
 
+### HR Module (NEW - Feb 2026) ✅
+- New Super Admin top tab **"HR Admin"** (5th tab alongside Master / Marketing / Pre-Sales / Pipeline Stages).
+- 3 sub-tabs: **Dashboard** (5 KPI cards + Monthly Salary Budget + Department Strength grid), **Employees** (Active/Left filter + search + 5-tab Add/Edit modal Personal/Employment/ID & Docs/Address & Emergency/Salary & Bank), **Roles & Credentials** (user table with linked-employee chip, role select, password reset modal, deactivate, Create User dialog that links to any employee + bcrypt-hashed password).
+- New collection `employees` (auto employee_code EMP0001 — race-safe via max(employee_code)+1).
+- `users` extended with `employee_id` link.
+- Endpoints: `/api/v3/hr/dashboard`, `/meta`, `/employees` CRUD, `/users` CRUD with linked_employee enrichment + role/password endpoints, `/branch-admin-candidates` (active branch_admins for branch picker).
+- End-to-end flow validated (iter 24): create Employee → Create User (branch_admin) → user appears in candidates → user can log in.
+- Tested: backend 23/23 PASS + frontend ~95% PASS (full nav, all sub-tabs, employee/user creation flows).
+
 ### Pre-Sales CRM + Dynamic Pipeline Stages (NEW - Feb 2026) ✅
 - New Super Admin top tabs: **Pre-Sales CRM** and **Pipeline Stages** (alongside Master / Marketing Board).
 - Dynamic pipeline stages — backend `/app/backend/routers/v3_stages.py` with CRUD + reorder + safe rename (propagates rename to existing lead.stage / lead.branch_stage) + delete-protect (409 if leads still reference it). Seeds defaults from V3_STAGES (6 pre-sales) + V3_BRANCH_STAGES (8 sales) on first GET.
