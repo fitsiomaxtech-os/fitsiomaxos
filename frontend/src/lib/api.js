@@ -163,3 +163,26 @@ export const stagesCreate = async (payload) => (await api.post("/stages", payloa
 export const stagesUpdate = async (id, payload) => (await api.patch(`/stages/${id}`, payload)).data;
 export const stagesDelete = async (id) => (await api.delete(`/stages/${id}`)).data;
 export const stagesReorder = async (items) => (await api.post("/stages/reorder", { items })).data;
+
+// HR
+export const hrDashboard = async () => (await api.get("/hr/dashboard")).data;
+export const hrMeta = async () => (await api.get("/hr/meta")).data;
+export const hrEmployees = async (params = {}) => {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v) q.set(k, v); });
+  return (await api.get(`/hr/employees${q.toString() ? `?${q.toString()}` : ""}`)).data;
+};
+export const hrCreateEmployee = async (payload) => (await api.post("/hr/employees", payload)).data;
+export const hrUpdateEmployee = async (id, payload) => (await api.patch(`/hr/employees/${id}`, payload)).data;
+export const hrDeleteEmployee = async (id) => (await api.delete(`/hr/employees/${id}`)).data;
+export const hrUsers = async (params = {}) => {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v) q.set(k, v); });
+  return (await api.get(`/hr/users${q.toString() ? `?${q.toString()}` : ""}`)).data;
+};
+export const hrCreateUser = async (payload) => (await api.post("/hr/users", payload)).data;
+export const hrUpdateUserRole = async (id, role) => (await api.patch(`/hr/users/${id}/role?role=${role}`)).data;
+export const hrResetPassword = async (id, password) => (await api.patch(`/hr/users/${id}/reset-password?password=${encodeURIComponent(password)}`)).data;
+export const hrDeactivateUser = async (id) => (await api.delete(`/hr/users/${id}`)).data;
+export const hrBranchAdminCandidates = async () => (await api.get("/hr/branch-admin-candidates")).data;
+
