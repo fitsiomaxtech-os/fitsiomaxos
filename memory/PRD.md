@@ -44,6 +44,14 @@ Build FITSIOMAX OS - multi-role SaaS for physiotherapy/fitness business with:
 - Jr. Physio Board (PhysioBoard): Today / Calendar / Patients views. Complete a session with remarks. Submit weekly self-assessment.
 - Patient View token endpoint (`/api/v3/patient/view/{token}`): patient-facing JSON only — strips `head_physio_notes`, `head_physio_suggestions`, `head_physio_id`, `consultation_fee`, `package_amount`. Validated by iteration_21 tests for no internal-data leak.
 
+### Branch Management Module (NEW - Feb 2026) ✅
+- New Super Admin top-level tab **"Branch Management"** (6th tab). Two sub-tabs:
+  - **Creation & Manager**: 4 KPI cards (Total Branches / Available Managers / Active Leads / Total Doctors), branch cards with manager block + 4 stat tiles + reassign link + edit/delete; Add Branch dialog requires `branch_name + address + admin_user_id` (dropdown of un-assigned branch_admin users only); Edit dialog hides admin select; dedicated Reassign Manager dialog wires PATCH /admin.
+  - **Performance**: 4 overall KPI cards + summary table with View → drill-in dialog showing 10 stat tiles (leads/completed/conversion/appointments/consultation_fees/package_revenue/total_revenue/doctors/head_physios/physios) + stage_breakdown horizontal bars.
+- Backend `/app/backend/routers/v3_branch_mgmt.py` — endpoints: `GET /branch-mgmt` (enriched list), `POST /with-existing-admin`, `PATCH /{id}/admin`, `GET /{id}/performance`, `GET /performance-summary`. Strict role-gating: super_admin only for writes; super_admin/business_dev/marketing_head for reads.
+- Inverse user.branch_id sync on create & reassign (previous admin unlinked).
+- Tested in iter 26: backend 17/17 PASS · frontend ~100% (all 6 nav tabs, KPIs, dialogs, performance drill-in) · zero new bugs.
+
 ### Comprehensive Add-Lead Modal + Custom Fields (NEW - Feb 2026) ✅
 - Pre-Sales CRM "Create Lead" now opens a full comprehensive modal mapped to physio patients (matches user's screenshot):
   - Standard: Name*, Source, Email, Phone*, Alternative Phone, Address, City, State.
