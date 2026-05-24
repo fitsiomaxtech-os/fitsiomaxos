@@ -58,6 +58,8 @@ class V3BranchOut(BaseModel):
     admin_email: str
     admin_phone: Optional[str] = ""
     vertical: str
+    opened_date: Optional[str] = ""
+    opening_hours: Optional[str] = ""
     created_at: str
 
 
@@ -68,6 +70,8 @@ class V3BranchUpdate(BaseModel):
     admin_email: Optional[str] = None
     admin_phone: Optional[str] = None
     vertical: Optional[str] = None
+    opened_date: Optional[str] = None
+    opening_hours: Optional[str] = None
 
 
 class V3DoctorCreate(BaseModel):

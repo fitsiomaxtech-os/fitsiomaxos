@@ -8,6 +8,7 @@ import {
   bmList, bmCreateWithExistingAdmin, bmReassignAdmin, bmPerformance, bmPerformanceSummary,
   updateBranch, deleteBranch, hrBranchAdminCandidates,
 } from "@/lib/api";
+import { BranchDetailPage } from "@/components/branch/BranchDetailPage";
 
 const TABS = [
   { key: "creation", label: "Creation & Manager", icon: Users },
@@ -16,6 +17,12 @@ const TABS = [
 
 export const BranchManagementBoard = () => {
   const [tab, setTab] = useState("creation");
+  const [drilledBranchId, setDrilledBranchId] = useState(null);
+
+  if (drilledBranchId) {
+    return <BranchDetailPage branchId={drilledBranchId} onBack={() => setDrilledBranchId(null)} />;
+  }
+
   return (
     <div className="space-y-5" data-testid="branch-mgmt-board">
       <div>
@@ -33,15 +40,15 @@ export const BranchManagementBoard = () => {
           );
         })}
       </div>
-      {tab === "creation" && <CreationTab />}
-      {tab === "performance" && <PerformanceTab />}
+      {tab === "creation" && <CreationTab onDrillIn={setDrilledBranchId} />}
+      {tab === "performance" && <PerformanceTab onDrillIn={setDrilledBranchId} />}
     </div>
   );
 };
 
 // ---------- Creation & Manager ----------
 
-const CreationTab = () => {
+const CreationTab = ({ onDrillIn }) => {
   const [branches, setBranches] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
@@ -78,24 +85,24 @@ const CreationTab = () => {
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {branches.length === 0 && <Card><CardContent className="p-6 text-center text-sm text-slate-400">No branches yet. Click <span className="font-semibold">Add Branch</span> to start.</CardContent></Card>}
         {branches.map((b) => (
-          <Card key={b.id} className="border-slate-200" data-testid={`bm-branch-card-${b.id}`}>
+          <Card key={b.id} className="border-slate-200 cursor-pointer hover:shadow-md transition" data-testid={`bm-branch-card-${b.id}`} onClick={() => onDrillIn && onDrillIn(b.id)}>
             <CardHeader className="flex flex-row items-start justify-between gap-2">
               <div>
-                <CardTitle className="text-base text-slate-900">{b.branch_name}</CardTitle>
+                <CardTitle className="text-base text-slate-900 hover:text-sky-700">{b.branch_name}</CardTitle>
                 <p className="mt-0.5 inline-flex items-center text-xs text-slate-500"><MapPin className="h-3 w-3 mr-1" />{b.address}</p>
               </div>
-              <div className="flex gap-1">
-                <button onClick={() => { setEditing(b); setShowAdd(true); }} className="text-blue-500 hover:text-blue-700" data-testid={`bm-branch-edit-${b.id}`}><Pencil className="h-4 w-4" /></button>
-                <button onClick={() => remove(b)} className="text-red-500 hover:text-red-700" data-testid={`bm-branch-delete-${b.id}`}><Trash2 className="h-4 w-4" /></button>
+              <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                <button onClick={(e) => { e.stopPropagation(); setEditing(b); setShowAdd(true); }} className="text-blue-500 hover:text-blue-700" data-testid={`bm-branch-edit-${b.id}`}><Pencil className="h-4 w-4" /></button>
+                <button onClick={(e) => { e.stopPropagation(); remove(b); }} className="text-red-500 hover:text-red-700" data-testid={`bm-branch-delete-${b.id}`}><Trash2 className="h-4 w-4" /></button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+            <CardContent className="space-y-3" onClick={(e) => { /* propagate to card */ }}>
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3" onClick={(e) => e.stopPropagation()}>
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Branch Admin</p>
                 <p className="mt-1 text-sm font-medium text-slate-800">{b.admin_name || "—"}</p>
                 <p className="text-xs text-slate-500"><Mail className="inline h-3 w-3 mr-1" />{b.admin_email || "—"}</p>
                 {b.admin_phone && <p className="text-xs text-slate-500"><Phone className="inline h-3 w-3 mr-1" />{b.admin_phone}</p>}
-                <button onClick={() => setReassigning(b)} className="mt-2 text-xs font-medium text-sky-600 hover:underline" data-testid={`bm-branch-reassign-${b.id}`}>Reassign Manager →</button>
+                <button onClick={(e) => { e.stopPropagation(); setReassigning(b); }} className="mt-2 text-xs font-medium text-sky-600 hover:underline" data-testid={`bm-branch-reassign-${b.id}`}>Reassign Manager →</button>
               </div>
               <div className="grid grid-cols-4 gap-2 text-center text-xs">
                 <Stat label="Leads" value={b.leads_total || 0} color="#0ea5e9" />
@@ -103,6 +110,7 @@ const CreationTab = () => {
                 <Stat label="Completed" value={b.leads_completed || 0} color="#22c55e" />
                 <Stat label="Doctors" value={b.doctors_count || 0} color="#a855f7" />
               </div>
+              <button className="w-full text-center text-xs font-semibold text-sky-600 hover:underline" data-testid={`bm-branch-open-${b.id}`}>Open Branch Details →</button>
             </CardContent>
           </Card>
         ))}
@@ -224,7 +232,7 @@ const Field = ({ label, children, className = "" }) => (
 
 // ---------- Performance ----------
 
-const PerformanceTab = () => {
+const PerformanceTab = ({ onDrillIn }) => {
   const [summary, setSummary] = useState([]);
   const [selected, setSelected] = useState(null);
   const [detail, setDetail] = useState(null);
@@ -273,7 +281,7 @@ const PerformanceTab = () => {
                       <span className="inline-flex h-5 items-center rounded bg-sky-50 px-2 text-xs font-semibold text-sky-700">{s.conversion_rate}%</span>
                     </td>
                     <td className="px-3 py-2 font-semibold text-emerald-600">₹{Number(s.total_revenue || 0).toLocaleString("en-IN")}</td>
-                    <td className="px-3 py-2"><button onClick={() => openDetail(s)} className="text-xs font-medium text-sky-600 hover:underline" data-testid={`bm-perf-view-${s.branch_id}`}>View →</button></td>
+                    <td className="px-3 py-2"><button onClick={() => onDrillIn(s.branch_id)} className="text-xs font-medium text-sky-600 hover:underline" data-testid={`bm-perf-view-${s.branch_id}`}>Open →</button></td>
                   </tr>
                 ))}
                 {summary.length === 0 && <tr><td colSpan="7" className="px-3 py-6 text-center text-slate-400">No branches yet.</td></tr>}

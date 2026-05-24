@@ -197,6 +197,7 @@ export const bmCreateWithExistingAdmin = async (payload) => (await api.post("/br
 export const bmReassignAdmin = async (branchId, admin_user_id) => (await api.patch(`/branch-mgmt/${branchId}/admin`, { admin_user_id })).data;
 export const bmPerformance = async (branchId) => (await api.get(`/branch-mgmt/${branchId}/performance`)).data;
 export const bmPerformanceSummary = async () => (await api.get("/branch-mgmt/performance-summary")).data;
+export const bmDetail = async (branchId) => (await api.get(`/branch-mgmt/${branchId}/detail`)).data;
 
 export const hrCreateEmployee = async (payload) => (await api.post("/hr/employees", payload)).data;
 export const hrUpdateEmployee = async (id, payload) => (await api.patch(`/hr/employees/${id}`, payload)).data;

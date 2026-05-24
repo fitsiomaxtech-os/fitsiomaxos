@@ -189,3 +189,94 @@ async def performance_summary(_: V3UserOut = Depends(v3_require_roles("super_adm
             "total_revenue": total_rev,
         })
     return summary
+
+
+
+@router.get("/{branch_id}/detail")
+async def branch_detail(branch_id: str, _: V3UserOut = Depends(v3_require_roles("super_admin", "business_dev", "marketing_head"))):
+    branch = await v3_col("branches").find_one({"id": branch_id}, {"_id": 0})
+    if not branch:
+        raise HTTPException(status_code=404, detail="Branch not found")
+
+    admin_user = None
+    if branch.get("admin_user_id"):
+        admin_user = await v3_col("users").find_one({"id": branch["admin_user_id"]}, {"_id": 0, "password": 0})
+
+    staff_rows = await v3_col("users").find({"branch_id": branch_id, "is_active": True}, {"_id": 0, "password": 0}).to_list(500)
+    head_physios = [u for u in staff_rows if u.get("role") == "head_physio"]
+    physios = [u for u in staff_rows if u.get("role") == "physio"]
+    branch_admins = [u for u in staff_rows if u.get("role") == "branch_admin"]
+
+    doctors = await v3_col("doctors").find({"branch_id": branch_id}, {"_id": 0}).to_list(500)
+
+    appointments = await v3_col("appointments").find({"branch_id": branch_id}, {"_id": 0}).sort("appointment_time", -1).to_list(500)
+    appt_completed = len([a for a in appointments if a.get("status") == "completed"])
+    appt_scheduled = len([a for a in appointments if a.get("status") in ("scheduled", "confirmed")])
+    appt_cancelled = len([a for a in appointments if a.get("status") == "cancelled"])
+
+    leads = await v3_col("leads").find({"branch_id": branch_id}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    consultations = [ld for ld in leads if ld.get("consultation_fee") and ld.get("consultation_fee") > 0]
+    packages = [ld for ld in leads if ld.get("package_amount") and ld.get("package_amount") > 0]
+    consultation_total = sum((ld.get("consultation_fee") or 0) for ld in consultations)
+    package_total = sum((ld.get("package_amount") or 0) for ld in packages)
+
+    followups = []
+    for ld in leads:
+        for f in (ld.get("follow_ups") or []):
+            followups.append({**f, "lead_id": ld["id"], "lead_name": ld.get("name", "")})
+    followups_open = len([f for f in followups if not f.get("completed")])
+    followups_done = len([f for f in followups if f.get("completed")])
+
+    weekly_assessments = []
+    for ld in leads:
+        for w in (ld.get("head_physio_weekly_reviews") or []):
+            weekly_assessments.append({**w, "lead_id": ld["id"], "lead_name": ld.get("name", "")})
+
+    head_physio_calendars = [d for d in doctors if d.get("profile_type") == "head_physio"]
+    physio_calendars = [d for d in doctors if d.get("profile_type") == "physio"]
+
+    return {
+        "branch": branch,
+        "admin_user": admin_user,
+        "staff": {
+            "branch_admins": branch_admins,
+            "head_physios": head_physios,
+            "physios": physios,
+            "doctors": doctors,
+        },
+        "performance": {
+            "kpis": {
+                "leads_total": len(leads),
+                "leads_open": len([ld for ld in leads if ld.get("stage") not in ("Completed", "Lost")]),
+                "leads_completed": len([ld for ld in leads if ld.get("stage") == "Completed"]),
+            },
+            "appointments": {
+                "list": appointments[:50],
+                "total": len(appointments),
+                "completed": appt_completed,
+                "scheduled": appt_scheduled,
+                "cancelled": appt_cancelled,
+            },
+            "consultations": {
+                "list": consultations[:50],
+                "total_count": len(consultations),
+                "total_amount": consultation_total,
+            },
+            "packages": {
+                "list": packages[:50],
+                "total_count": len(packages),
+                "total_amount": package_total,
+            },
+            "follow_ups": {
+                "list": followups[:100],
+                "open": followups_open,
+                "done": followups_done,
+                "total": len(followups),
+            },
+        },
+        "head_physio_section": {
+            "calendars": head_physio_calendars,
+            "physio_calendars": physio_calendars,
+            "post_treatment_reviews": weekly_assessments[:100],
+        },
+    }
