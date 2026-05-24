@@ -1,5 +1,5 @@
 import axios from "axios";
-import { loadSession } from "@/lib/session";
+import { loadSession, clearSession } from "@/lib/session";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -14,6 +14,24 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Auto-logout on stale/invalid JWT so we don't show a runtime error overlay
+let _redirecting = false;
+api.interceptors.response.use(
+  (resp) => resp,
+  (error) => {
+    const status = error?.response?.status;
+    const url = error?.config?.url || "";
+    const isAuthCall = url.includes("/auth/login") || url.includes("/auth/logout");
+    if (status === 401 && !isAuthCall && !_redirecting) {
+      _redirecting = true;
+      clearSession();
+      try { window.dispatchEvent(new Event("auth:expired")); } catch (e) { /* noop */ }
+      setTimeout(() => { _redirecting = false; window.location.reload(); }, 100);
+    }
+    return Promise.reject(error);
+  },
+);
 
 export const apiLogin = async (email, password) => {
   const { data } = await api.post("/auth/login", { email, password });
