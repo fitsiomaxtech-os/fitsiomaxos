@@ -32,8 +32,8 @@ export const LeadEditModal = ({ lead, onClose, onSaved }) => {
   const [stages, setStages] = useState([]);
 
   useEffect(() => {
-    getBranches().then(setBranches).catch(() => {});
-    stagesList("pre_sales").then(setStages).catch(() => {});
+    getBranches().then(setBranches).catch((e) => console.warn("[load failed]", e?.message || e));
+    stagesList("pre_sales").then(setStages).catch((e) => console.warn("[load failed]", e?.message || e));
   }, []);
 
   const save = async () => {

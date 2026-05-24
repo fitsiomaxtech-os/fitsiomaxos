@@ -93,9 +93,7 @@ export const PreSalesBoard = () => {
       setLeads(leadData);
       setBranches(branchData);
       setMasterBoard(boardData);
-    } catch {
-      /* silent */
-    }
+    } catch (e) { console.warn("[PreSalesBoard load failed]", e?.message || e); }
     setLoading(false);
   }, [dateFrom, dateTo]);
 
@@ -439,13 +437,13 @@ function LeadDetailModal({ lead, branches, onClose, onStageMove, onRefresh }) {
   }, [activeTab, lead.id]);
 
   const loadRemarks = async () => {
-    try { setRemarks(await getLeadRemarks(lead.id)); } catch { /* silent */ }
+    try { setRemarks(await getLeadRemarks(lead.id)); } catch (e) { console.warn("[PreSalesBoard load failed]", e?.message || e); }
   };
   const loadFollowUps = async () => {
-    try { setFollowUps(await getLeadFollowUps(lead.id)); } catch { /* silent */ }
+    try { setFollowUps(await getLeadFollowUps(lead.id)); } catch (e) { console.warn("[PreSalesBoard load failed]", e?.message || e); }
   };
   const loadActivity = async () => {
-    try { setActivityLog(await getLeadActivity(lead.id)); } catch { /* silent */ }
+    try { setActivityLog(await getLeadActivity(lead.id)); } catch (e) { console.warn("[PreSalesBoard load failed]", e?.message || e); }
   };
 
   const saveEdit = async () => {

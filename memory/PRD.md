@@ -44,6 +44,24 @@ Build FITSIOMAX OS - multi-role SaaS for physiotherapy/fitness business with:
 - Jr. Physio Board (PhysioBoard): Today / Calendar / Patients views. Complete a session with remarks. Submit weekly self-assessment.
 - Patient View token endpoint (`/api/v3/patient/view/{token}`): patient-facing JSON only — strips `head_physio_notes`, `head_physio_suggestions`, `head_physio_id`, `consultation_fee`, `package_amount`. Validated by iteration_21 tests for no internal-data leak.
 
+### Code-Review Pass (Feb 2026) ✅
+**Applied (cheap wins, no behaviour change):**
+- Fixed array-index `key` in MarketingBoard Performance lists (Leads-per-Pre-Sales & Deals-per-Sales) → use `r.name`.
+- Fixed array-index `key` + `data-testid` in BranchDetailPage post-treatment reviews → composite `${lead_id}-${week}`.
+- Replaced silent `.catch(() => {})` and `} catch { /* silent */ }` blocks with `console.warn` in 8 files (LeadEditModal, BranchManagementBoard, HRBoard, CreateLeadModal, MarketingBoard, BusinessLeadsDashboard, PreSalesBoard, CRMPage). Failures are now debuggable without spamming user toasts.
+
+**Triaged as false positives / skipped (with reasoning):**
+- "Hardcoded secrets in test files" — these are PUBLIC demo seed credentials (`admin123` etc.) documented in `/app/memory/test_credentials.md`. Not secrets.
+- "Hardcoded API keys in LoginPage.jsx" — the demo-user dropdown values. Intentional.
+- "localStorage tokens" — switching to httpOnly cookies needs backend CSRF/SameSite redesign + cookie domain plumbing through the Emergent proxy. Deferred to deployment hardening phase.
+- `utils.py:15` `is not None` — correct Python idiom, not a `is "literal"` bug.
+- "useEffect missing deps (53)" — most are eslint-react-hooks false positives where the missing deps are module-level imports (`toast`, `console`, axios fns). Adding them all would cause infinite loops; not changed without specific repro.
+
+**Deferred to backlog (P2 — works fine today):**
+- Refactor `v3_finance.get_branch_finance`, `v3_branch_mgmt.branch_detail`, `v1.import_from_sheets`, `v3_session_assign.assign_sessions` into smaller helpers.
+- Split CRMPage (740 lines), PreSalesBoard LeadDetailModal (534 lines), HeadPhysioCalendar (439 lines), BranchAdminBoard BranchLeadModal (361 lines).
+- Add type hints to `server.py` + test files (currently 38%).
+
 ### Branch Detail Drill-in (NEW - Feb 2026) ✅
 - Clicking any branch card in Branch Management → comprehensive `BranchDetailPage` (not a modal).
 - 4 tabs: **Summary** (Name, Address, Opened Date, Opening Hours, Vertical, Created + Branch Admin contact card), **Staff** (4 toggle cards: branch admins / head physios / physios / doctors with full member listing), **Performance** (3 KPI cards + 4 sub-tabs: Appointments / Consultations / Packages / Follow-ups, each with Mini stats + ListTable), **Head Physio** (head-physio calendars, physio calendars, weekly post-treatment reviews).

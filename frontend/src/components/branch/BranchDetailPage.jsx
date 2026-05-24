@@ -321,7 +321,7 @@ const HeadPhysioTab = ({ hp }) => (
         {hp.post_treatment_reviews.length === 0 ? <p className="text-sm text-slate-400">No post-treatment reviews yet.</p> : (
           <div className="space-y-2">
             {hp.post_treatment_reviews.slice(0, 25).map((r, i) => (
-              <div key={i} className="rounded-md border border-slate-200 p-3" data-testid={`branch-hp-review-${i}`}>
+              <div key={`${r.lead_id}-${r.week ?? i}`} className="rounded-md border border-slate-200 p-3" data-testid={`branch-hp-review-${r.lead_id}-${r.week ?? i}`}>
                 <div className="mb-1 flex items-center justify-between">
                   <p className="text-sm font-semibold text-slate-800">{r.lead_name}</p>
                   <span className="rounded bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-600">Week {r.week ?? "?"}</span>

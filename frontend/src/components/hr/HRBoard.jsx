@@ -18,7 +18,7 @@ const TABS = [
 export const HRBoard = () => {
   const [tab, setTab] = useState("dashboard");
   const [meta, setMeta] = useState({ departments: [], roles: [] });
-  useEffect(() => { hrMeta().then(setMeta).catch(() => {}); }, []);
+  useEffect(() => { hrMeta().then(setMeta).catch((e) => console.warn("[load failed]", e?.message || e)); }, []);
   return (
     <div className="space-y-5" data-testid="hr-board">
       <div>
@@ -98,7 +98,7 @@ const EmployeesTab = ({ meta }) => {
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState(null);
 
-  const load = useCallback(() => hrEmployees({ status: filterStatus === "all" ? "" : filterStatus }).then(setEmployees).catch(() => {}), [filterStatus]);
+  const load = useCallback(() => hrEmployees({ status: filterStatus === "all" ? "" : filterStatus }).then(setEmployees).catch((e) => console.warn("[load failed]", e?.message || e)), [filterStatus]);
   useEffect(() => { load(); }, [load]);
 
   const filtered = employees.filter((e) => {
@@ -289,7 +289,7 @@ const RolesTab = ({ meta }) => {
   const [resetTarget, setResetTarget] = useState(null);
   const [newPwd, setNewPwd] = useState("");
 
-  const load = useCallback(() => hrUsers({ search, role: roleFilter !== "all" ? roleFilter : undefined }).then(setUsers).catch(() => {}), [search, roleFilter]);
+  const load = useCallback(() => hrUsers({ search, role: roleFilter !== "all" ? roleFilter : undefined }).then(setUsers).catch((e) => console.warn("[load failed]", e?.message || e)), [search, roleFilter]);
   useEffect(() => { load(); }, [load]);
 
   const changeRole = async (u, role) => {
@@ -369,7 +369,7 @@ const RolesTab = ({ meta }) => {
 const CreateUserModal = ({ meta, onClose, onSaved }) => {
   const [employees, setEmployees] = useState([]);
   const [form, setForm] = useState({ employee_id: "", full_name: "", email: "", role: "", password: "", confirm: "" });
-  useEffect(() => { hrEmployees({ status: "active" }).then(setEmployees).catch(() => {}); }, []);
+  useEffect(() => { hrEmployees({ status: "active" }).then(setEmployees).catch((e) => console.warn("[load failed]", e?.message || e)); }, []);
 
   const pickEmployee = (id) => {
     const emp = employees.find((e) => e.id === id);

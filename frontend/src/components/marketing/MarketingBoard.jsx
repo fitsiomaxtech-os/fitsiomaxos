@@ -116,7 +116,7 @@ const SourcesTab = () => {
   const [form, setForm] = useState({ name: "", sheet_url: "", source_type: "google_sheets", headers: "" });
   const [syncRows, setSyncRows] = useState("[{\"name\":\"Aarav\",\"phone\":\"9000000001\",\"email\":\"aarav@x.com\",\"vertical\":\"offline_physiotherapy\"}]");
 
-  const load = useCallback(() => mkGetSources().then(setSources).catch(() => {}), []);
+  const load = useCallback(() => mkGetSources().then(setSources).catch((e) => console.warn("[load failed]", e?.message || e)), []);
   useEffect(() => { load(); }, [load]);
 
   const submit = async () => {
@@ -378,7 +378,7 @@ const TeamTab = ({ team, reloadTeam, branches }) => {
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ full_name: "", email: "", password: "", team_type: "pre_sales", branch_id: "" });
 
-  const loadSettings = useCallback(() => mkGetDistribution().then(setSettings).catch(() => {}), []);
+  const loadSettings = useCallback(() => mkGetDistribution().then(setSettings).catch((e) => console.warn("[load failed]", e?.message || e)), []);
   useEffect(() => { loadSettings(); }, [loadSettings]);
 
   const patch = async (updates) => {
@@ -486,7 +486,7 @@ const TeamCard = ({ title, members, kind }) => (
 
 const PerformanceTab = () => {
   const [data, setData] = useState(null);
-  useEffect(() => { mkPerformance().then(setData).catch(() => {}); }, []);
+  useEffect(() => { mkPerformance().then(setData).catch((e) => console.warn("[load failed]", e?.message || e)); }, []);
   if (!data) return <p className="text-sm text-slate-500">Loading...</p>;
 
   const maxFunnel = Math.max(...data.funnel.map((r) => r.count), 1);
@@ -509,10 +509,10 @@ const PerformanceTab = () => {
         {data.funnel.map((r) => <Row key={r.stage} label={r.stage} count={r.count} total={maxFunnel} color="bg-sky-500" />)}
       </CardContent></Card>
       <Card><CardHeader><CardTitle className="text-base">Leads per Pre-Sales Agent</CardTitle></CardHeader><CardContent className="space-y-2">
-        {data.leads_per_pre_sales.length === 0 ? <p className="text-xs text-slate-400">No data.</p> : data.leads_per_pre_sales.map((r, i) => <Row key={i} label={r.name} count={r.count} total={maxPre} color="bg-amber-500" />)}
+        {data.leads_per_pre_sales.length === 0 ? <p className="text-xs text-slate-400">No data.</p> : data.leads_per_pre_sales.map((r) => <Row key={r.name} label={r.name} count={r.count} total={maxPre} color="bg-amber-500" />)}
       </CardContent></Card>
       <Card><CardHeader><CardTitle className="text-base">Deals Closed per Sales (Branch Admin)</CardTitle></CardHeader><CardContent className="space-y-2">
-        {data.deals_per_sales.length === 0 ? <p className="text-xs text-slate-400">No data.</p> : data.deals_per_sales.map((r, i) => <Row key={i} label={r.name} count={r.count} total={maxSales} color="bg-green-500" />)}
+        {data.deals_per_sales.length === 0 ? <p className="text-xs text-slate-400">No data.</p> : data.deals_per_sales.map((r) => <Row key={r.name} label={r.name} count={r.count} total={maxSales} color="bg-green-500" />)}
       </CardContent></Card>
     </div>
   );
@@ -537,7 +537,7 @@ const DialogShell = ({ title, onClose, children, testid }) => (
 export const MarketingBoard = ({ branches = [] }) => {
   const [tab, setTab] = useState("overview");
   const [team, setTeam] = useState({ pre_sales: [], sales: [] });
-  const reloadTeam = useCallback(() => mkGetTeam().then(setTeam).catch(() => {}), []);
+  const reloadTeam = useCallback(() => mkGetTeam().then(setTeam).catch((e) => console.warn("[load failed]", e?.message || e)), []);
   useEffect(() => { reloadTeam(); }, [reloadTeam]);
 
   return (

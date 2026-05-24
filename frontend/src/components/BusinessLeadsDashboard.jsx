@@ -128,9 +128,7 @@ export const BusinessLeadsDashboard = () => {
     try {
       const data = await getBdSummary();
       setSummary(data);
-    } catch {
-      /* silent */
-    }
+    } catch (e) { console.warn("[BD load failed]", e?.message || e); }
     setLoading(false);
   }, []);
 
@@ -138,9 +136,7 @@ export const BusinessLeadsDashboard = () => {
     try {
       const data = await getBranches();
       setBranches(data);
-    } catch {
-      /* silent */
-    }
+    } catch (e) { console.warn("[BD load failed]", e?.message || e); }
   }, []);
 
   const loadLeads = useCallback(async () => {
@@ -153,9 +149,7 @@ export const BusinessLeadsDashboard = () => {
       if (leadDateTo) params.end_date = `${leadDateTo}T23:59:59`;
       const data = await getLeads(params);
       setLeads(data);
-    } catch {
-      /* silent */
-    }
+    } catch (e) { console.warn("[BD load failed]", e?.message || e); }
     setLoading(false);
   }, [leadStageFilter, leadBranchFilter, leadDateFrom, leadDateTo]);
 
@@ -163,18 +157,14 @@ export const BusinessLeadsDashboard = () => {
     try {
       const data = await getSheetConnections();
       setSheetConnections(data);
-    } catch {
-      /* silent */
-    }
+    } catch (e) { console.warn("[BD load failed]", e?.message || e); }
   }, []);
 
   const loadSources = useCallback(async () => {
     try {
       const data = await getLeadSources();
       setLeadSources(data);
-    } catch {
-      /* silent */
-    }
+    } catch (e) { console.warn("[BD load failed]", e?.message || e); }
   }, []);
 
   useEffect(() => {

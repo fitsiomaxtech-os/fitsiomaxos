@@ -237,7 +237,7 @@ const PerformanceTab = ({ onDrillIn }) => {
   const [selected, setSelected] = useState(null);
   const [detail, setDetail] = useState(null);
 
-  const load = useCallback(() => bmPerformanceSummary().then(setSummary).catch(() => {}), []);
+  const load = useCallback(() => bmPerformanceSummary().then(setSummary).catch((e) => console.warn("[load failed]", e?.message || e)), []);
   useEffect(() => { load(); }, [load]);
 
   const openDetail = async (b) => {

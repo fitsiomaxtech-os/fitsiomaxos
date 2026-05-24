@@ -31,11 +31,11 @@ export const CreateLeadModal = ({ onClose, onSaved, isSuperAdmin = true }) => {
   const [showAddField, setShowAddField] = useState(false);
   const [showManage, setShowManage] = useState(false);
 
-  const loadFields = () => leadFieldsList().then(setCustomFields).catch(() => {});
+  const loadFields = () => leadFieldsList().then(setCustomFields).catch((e) => console.warn("[load failed]", e?.message || e));
 
   useEffect(() => {
     loadFields();
-    getBranches().then(setBranches).catch(() => {});
+    getBranches().then(setBranches).catch((e) => console.warn("[load failed]", e?.message || e));
   }, []);
 
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
@@ -220,7 +220,7 @@ const AddCustomFieldDialog = ({ onClose, onSaved, existing = null }) => {
 const ManageCustomFieldsDialog = ({ onClose }) => {
   const [fields, setFields] = useState([]);
   const [editing, setEditing] = useState(null);
-  const load = () => leadFieldsList().then(setFields).catch(() => {});
+  const load = () => leadFieldsList().then(setFields).catch((e) => console.warn("[load failed]", e?.message || e));
   useEffect(() => { load(); }, []);
 
   const remove = async (f) => {
