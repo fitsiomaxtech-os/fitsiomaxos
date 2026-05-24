@@ -44,6 +44,16 @@ Build FITSIOMAX OS - multi-role SaaS for physiotherapy/fitness business with:
 - Jr. Physio Board (PhysioBoard): Today / Calendar / Patients views. Complete a session with remarks. Submit weekly self-assessment.
 - Patient View token endpoint (`/api/v3/patient/view/{token}`): patient-facing JSON only — strips `head_physio_notes`, `head_physio_suggestions`, `head_physio_id`, `consultation_fee`, `package_amount`. Validated by iteration_21 tests for no internal-data leak.
 
+### Pre-Sales CRM + Dynamic Pipeline Stages (NEW - Feb 2026) ✅
+- New Super Admin top tabs: **Pre-Sales CRM** and **Pipeline Stages** (alongside Master / Marketing Board).
+- Dynamic pipeline stages — backend `/app/backend/routers/v3_stages.py` with CRUD + reorder + safe rename (propagates rename to existing lead.stage / lead.branch_stage) + delete-protect (409 if leads still reference it). Seeds defaults from V3_STAGES (6 pre-sales) + V3_BRANCH_STAGES (8 sales) on first GET.
+- Pre-Sales CRM page: KPI cards per stage, search, source filter, sort, stage chips, Create Lead dialog, leads table with masked phone/email, eye-icon opens Lead Detail Dialog.
+- Lead Detail Dialog: Overview tab + Move-to-Stage buttons rendered dynamically from stages. Edit button opens Lead Edit Modal.
+- Lead Edit Modal: name, email, phone, location, expected_consultation_date, months_of_pain, age, gender, occupation, **department** (Offline Physio / Online Physio / Fitness). When `department=offline_physio`, branch picker section appears showing each branch + Branch Admin name + address as radio cards.
+- V3LeadUpdate + V3LeadOut extended with the new fields (location, expected_consultation_date, months_of_pain, age, gender, occupation, department, assigned_user_id, assigned_user_name).
+- Pre-sales role users also see the same `PreSalesCRM` component (replaced the old `PreSalesBoard` for that role).
+- Tested in iteration_23: 10/10 backend + frontend nav/KPI/chips/role-gating all green.
+
 ### Marketing Module (NEW - Feb 2026) ✅
 - New Super Admin top-level tab ("Marketing Board") alongside the existing "Master View" — no router change.
 - 5 sub-tabs: Overview · Lead Sources · All Leads · Team & Distribution · Performance.
