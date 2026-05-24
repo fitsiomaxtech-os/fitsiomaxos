@@ -8,6 +8,7 @@ import {
   getLeads, createManualLead, stagesList, updateLead,
 } from "@/lib/api";
 import { LeadEditModal } from "@/components/LeadEditModal";
+import { CreateLeadModal } from "@/components/CreateLeadModal";
 import { SourcePill } from "@/components/marketing/SourcePill";
 import { MaskedContact } from "@/components/MaskedContact";
 
@@ -22,7 +23,6 @@ export const PreSalesCRM = ({ onManageStages }) => {
   const [sortNewest, setSortNewest] = useState(true);
   const [editing, setEditing] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: "", phone: "", email: "" });
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
@@ -61,16 +61,6 @@ export const PreSalesCRM = ({ onManageStages }) => {
   const moveToStage = async (leadId, stageName) => {
     try { await updateLead(leadId, { stage: stageName }); toast.success(`Moved to ${stageName}`); load(); }
     catch (e) { toast.error(e?.response?.data?.detail || "Move failed"); }
-  };
-
-  const createLead = async () => {
-    if (!createForm.name || !createForm.phone) { toast.error("Name + phone required"); return; }
-    try {
-      await createManualLead({ ...createForm, source_type: "manual", source_tab: "Manual", vertical: "offline_physiotherapy" });
-      toast.success("Lead created");
-      setShowCreate(false); setCreateForm({ name: "", phone: "", email: "" });
-      load();
-    } catch (e) { toast.error(e?.response?.data?.detail || "Create failed"); }
   };
 
   // Pick KPI cards: total + up to 8 stage cards
@@ -154,18 +144,7 @@ export const PreSalesCRM = ({ onManageStages }) => {
       )}
 
       {showCreate && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 p-4" data-testid="presales-create-dialog">
-          <div className="w-full max-w-md space-y-3 rounded-lg bg-white p-5 shadow-xl">
-            <h3 className="text-base font-semibold">Create New Lead</h3>
-            <Input placeholder="Name *" value={createForm.name} onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })} data-testid="presales-create-name" />
-            <Input placeholder="Phone *" value={createForm.phone} onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })} data-testid="presales-create-phone" />
-            <Input placeholder="Email" value={createForm.email} onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })} data-testid="presales-create-email" />
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowCreate(false)} className="flex-1" data-testid="presales-create-cancel">Cancel</Button>
-              <Button onClick={createLead} className="flex-1" data-testid="presales-create-submit">Create</Button>
-            </div>
-          </div>
-        </div>
+        <CreateLeadModal onClose={() => setShowCreate(false)} onSaved={load} />
       )}
     </div>
   );

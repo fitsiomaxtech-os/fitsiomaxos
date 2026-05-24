@@ -1,0 +1,36 @@
+{
+  "summary": "Iteration 25 — Full backend + frontend testing of new Custom Lead Fields system (/api/v3/lead-fields CRUD) and the extended /api/v3/leads/manual + /api/v3/leads/{id} PUT comprehensive payload (alternative_phone, address, city, state, location, department, condition, months_of_pain, age, gender, occupation, expected_consultation_date, branch_id, extra_fields:Dict[str,Any]). Backend: 13/13 pytest passing — list/create/duplicate-409/RBAC-403/patch/patch-404/delete/delete-404 for /lead-fields; full-payload create with stage='New Lead', online_physio without branch_id, offline_physio branch_id persistence, partial PUT update with numeric extra_fields (e.g. deposit_paid=5000) round-trip. Frontend: super_admin login → Pre-Sales CRM → 'Create Lead' button (data-testid='presales-create-lead-btn') opens comprehensive modal (data-testid='create-lead-modal') with header 'Add New Lead', '+ Add Field' button, close X. All 15 expected data-testids rendered (name, source, email, phone, alt phone, address, city, state, department, condition, months_of_pain, age, occupation, consultation date, add-field-btn, manage-fields-btn). Department=offline_physio toggles the branch section (data-testid='lead-create-branch-section') with 5 seeded branches. Add Custom Field dialog → label+type=select+options 'Apollo,Star,HDFC' → field appears live in modal. Submitting name+phone+department=offline_physio+branch selected → 'Lead created' success toast → modal closed → new lead 'TEST_UILead_Ui25b' at top of table (offline_physio + New Lead stage). Regression: navigation to Master View / Marketing Board / Pipeline Stages / HR Admin all succeeded.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "CRMPage Branch Booking <select>", "issues": ["Pre-existing hydration warning: <span> cannot be a child of <option>. Same warning reported in iterations 21-24. Not introduced by this iteration. Located in CRMPage line ~822 inside the branch booking lead <select>."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lead_fields_iteration25.py",
+    "/app/test_reports/pytest/pytest_results_iteration25.xml"
+  ],
+  "action_items": [
+    "(Carry-over) Remove the <span> wrapper inside <option> in CRMPage Branch Booking lead <select> to eliminate hydration warning.",
+    "Optional UX: ManageCustomFieldsDialog has no loading state — list flashes from empty to populated; consider a 'Loading…' placeholder while leadFieldsList() resolves."
+  ],
+  "critical_code_review_comments": [
+    "v3_lead_fields.create_custom_field allows passing an explicit `key`. There is NO validation that user-supplied key matches a slug pattern; a caller could supply key='   ' or key='ABC$$' which would be stored as-is. Recommend slugifying user-supplied key as well, or enforcing regex ^[a-z0-9_]+$.",
+    "v3_lead_fields.update_custom_field PATCH does NOT prevent renaming `label` to a value whose slug collides with another field's key (it only checks key on create). Consider re-checking duplicate key when label changes.",
+    "v3_leads.v3_manual_lead defaults `vertical=offline_physiotherapy` (from V3LeadCreate) but the new `department` field is independent (offline_physio/online_physio/fitness). These two parallel taxonomies (vertical vs department) may confuse later filtering — consider unifying or documenting the relationship.",
+    "v3_leads.v3_manual_lead silently coerces `branch_id` to None when not provided. For department='offline_physio' the API allows branch_id=None (per spec). However for downstream branch-scoped queries this means an offline lead with no branch may never surface to a branch_admin — verify with product whether this is intentional.",
+    "extra_fields now Dict[str, Any] is correct for the new spec but there is no server-side validation that the supplied keys exist in custom_lead_fields. A typo (e.g. extra_fields.deposit_pad) silently persists. Optional: validate keys against custom_lead_fields collection or return a warning.",
+    "ManageCustomFieldsDialog uses window.confirm() for delete — works but inconsistent with the rest of the app (which uses toast/shadcn dialogs). Minor UX consistency issue.",
+    "CreateLeadModal.jsx: form does not validate phone format or required fields client-side beyond presence (name+phone). E.g. months_of_pain accepts any string until backend coerces. Add type=number coercion before POST or rely on backend validation message (currently backend accepts string→int silently)."
+  ],
+  "updated_files": ["/app/backend/tests/test_lead_fields_iteration25.py"],
+  "success_rate": {"backend": "100% (13/13)", "frontend": "~95% — all modal fields render, branch section conditional rendering verified, add-custom-field works live, submit creates lead with toast + table refresh, all 4 regression tabs navigable. Only Manage dialog rows count read as 0 in the script (race against async leadFieldsList fetch) — not a product bug; visual confirmation of field-add success was observed via DOM."},
+  "test_credentials": "From /app/memory/test_credentials.md — super_admin admin@fitsiomax.com/admin123 + pre_sales presales@fitsiomax.com/presales123 + branch_admin branchadmin@fitsiomax.com/branch123 used.",
+  "seed_data_creation": "Backend test created and cleaned up TEST_-prefixed custom fields via autouse fixture. Backend left behind a few TEST_*Lead_* leads (TEST_FullLead, TEST_OnlineLead, TEST_OfflineWithBranch, TEST_PutLead) and frontend left TEST_UILead_Ui25b — harmless and visible in the screenshot. A custom field TEST_Insurance_Ui25b created via UI may persist (UI delete step did not detect rows due to async timing).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Custom Lead Fields system fully wired. Backend endpoints (all under /api/v3/lead-fields): GET (any auth) / POST PATCH DELETE (super_admin only). Slugify: 'Insurance Provider' → 'insurance_provider'. Allowed types: text/textarea/number/date/email/phone/select. Extended /leads/manual + PUT /leads/{id} accept the full Patient + Address payload + extra_fields:Dict[str,Any]. Frontend modal lives at /app/frontend/src/components/CreateLeadModal.jsx with testids: create-lead-modal, lead-create-{name,email,phone,altphone,address,city,state,department,condition,months,age,occupation,consultdate,branch-section,branch-<id>,close,cancel,submit}, lead-add-field-btn, lead-manage-fields-btn, add-custom-field-dialog + add-field-{label,type,options,placeholder,required,cancel,submit}, manage-fields-dialog + manage-field-{row,edit,delete}-<id>. For test-script timing, sleep ~800ms after opening manage-fields-dialog before counting manage-field-row-* (async leadFieldsList fetch).",
+  "rca_of_the_issue": "No product bug found. Only a known carry-over: hydration warning <span> inside <option> in CRMPage Branch Booking <select> (line ~822). Not introduced by this iteration. Recommend wrapping option text directly (e.g. <option>{lead.name}</option>) instead of embedding a styled <span>."
+}

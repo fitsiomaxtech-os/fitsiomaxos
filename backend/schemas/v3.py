@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from typing import List, Optional, Dict, Literal
+from typing import List, Optional, Dict, Literal, Any
 
 
 class V3UserOut(BaseModel):
@@ -102,7 +102,19 @@ class V3LeadCreate(BaseModel):
     source_type: Literal["manual", "google_sheet"] = "manual"
     branch_id: Optional[str] = None
     notes: Optional[str] = ""
-    extra_fields: Optional[Dict[str, str]] = None
+    extra_fields: Optional[Dict[str, Any]] = None
+    alternative_phone: Optional[str] = ""
+    address: Optional[str] = ""
+    city: Optional[str] = ""
+    state: Optional[str] = ""
+    location: Optional[str] = ""
+    department: Optional[str] = ""
+    condition: Optional[str] = ""
+    months_of_pain: Optional[int] = None
+    age: Optional[int] = None
+    gender: Optional[str] = ""
+    occupation: Optional[str] = ""
+    expected_consultation_date: Optional[str] = ""
 
 
 class V3LeadUpdate(BaseModel):
@@ -114,7 +126,7 @@ class V3LeadUpdate(BaseModel):
     notes: Optional[str] = None
     stage: Optional[str] = None
     branch_id: Optional[str] = None
-    extra_fields: Optional[Dict[str, str]] = None
+    extra_fields: Optional[Dict[str, Any]] = None
     location: Optional[str] = None
     expected_consultation_date: Optional[str] = None
     months_of_pain: Optional[int] = None
@@ -122,6 +134,11 @@ class V3LeadUpdate(BaseModel):
     gender: Optional[str] = None
     occupation: Optional[str] = None
     department: Optional[str] = None
+    alternative_phone: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    condition: Optional[str] = None
     assigned_user_id: Optional[str] = None
     assigned_user_name: Optional[str] = None
 
@@ -140,7 +157,7 @@ class V3LeadOut(BaseModel):
     branch_stage: Optional[str] = None
     branch_id: Optional[str] = None
     notes: Optional[str] = ""
-    extra_fields: Dict[str, str]
+    extra_fields: Dict[str, Any]
     consultation_fee: Optional[float] = None
     package_amount: Optional[float] = None
     package_weeks: Optional[int] = None
@@ -153,6 +170,11 @@ class V3LeadOut(BaseModel):
     gender: Optional[str] = None
     occupation: Optional[str] = None
     department: Optional[str] = None
+    alternative_phone: Optional[str] = ""
+    address: Optional[str] = ""
+    city: Optional[str] = ""
+    state: Optional[str] = ""
+    condition: Optional[str] = ""
     assigned_user_id: Optional[str] = None
     assigned_user_name: Optional[str] = None
     created_at: str

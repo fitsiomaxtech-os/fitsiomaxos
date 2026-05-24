@@ -184,5 +184,12 @@ export const hrCreateUser = async (payload) => (await api.post("/hr/users", payl
 export const hrUpdateUserRole = async (id, role) => (await api.patch(`/hr/users/${id}/role?role=${role}`)).data;
 export const hrResetPassword = async (id, password) => (await api.patch(`/hr/users/${id}/reset-password?password=${encodeURIComponent(password)}`)).data;
 export const hrDeactivateUser = async (id) => (await api.delete(`/hr/users/${id}`)).data;
+
+// Custom Lead Fields
+export const leadFieldsList = async () => (await api.get("/lead-fields")).data;
+export const leadFieldsCreate = async (payload) => (await api.post("/lead-fields", payload)).data;
+export const leadFieldsUpdate = async (id, payload) => (await api.patch(`/lead-fields/${id}`, payload)).data;
+export const leadFieldsDelete = async (id) => (await api.delete(`/lead-fields/${id}`)).data;
+
 export const hrBranchAdminCandidates = async () => (await api.get("/hr/branch-admin-candidates")).data;
 
