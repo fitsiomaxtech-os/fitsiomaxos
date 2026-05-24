@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   ArrowLeft, MapPin, Clock, Calendar as CalendarIcon, Mail, Phone, User, RefreshCw, Pencil,
-  Users, BarChart3, Stethoscope, Activity, ListChecks, FileText, Wallet,
+  Users, BarChart3, Stethoscope, Activity, ListChecks, FileText, Wallet, UserCog, X,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
-import { bmDetail, updateBranch } from "@/lib/api";
+import { bmDetail, updateBranch, bmReassignAdmin, hrBranchAdminCandidates } from "@/lib/api";
 
 const TABS = [
   { key: "summary", label: "Summary", icon: BarChart3 },
@@ -55,7 +55,7 @@ export const BranchDetailPage = ({ branchId, onBack }) => {
         })}
       </div>
 
-      {tab === "summary" && <SummaryTab data={data} />}
+      {tab === "summary" && <SummaryTab data={data} branchId={branchId} onChanged={load} />}
       {tab === "staff" && <StaffTab staff={data.staff} />}
       {tab === "performance" && <PerformanceTab perf={data.performance} />}
       {tab === "head_physio" && <HeadPhysioTab hp={data.head_physio_section} />}
@@ -67,9 +67,11 @@ export const BranchDetailPage = ({ branchId, onBack }) => {
 
 // ---------- Summary tab ----------
 
-const SummaryTab = ({ data }) => {
+const SummaryTab = ({ data, branchId, onChanged }) => {
   const b = data.branch;
   const adm = data.admin_user;
+  const [showEditAdmin, setShowEditAdmin] = useState(false);
+  const [showReassign, setShowReassign] = useState(false);
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="lg:col-span-2" data-testid="branch-summary-card">
@@ -80,16 +82,22 @@ const SummaryTab = ({ data }) => {
           <Row icon={<CalendarIcon className="h-4 w-4 text-slate-400" />} label="Opened Date" value={b.opened_date || "—"} />
           <Row icon={<Clock className="h-4 w-4 text-slate-400" />} label="Opening Hours" value={b.opening_hours || "—"} />
           <Row icon={<FileText className="h-4 w-4 text-slate-400" />} label="Vertical" value={b.vertical} />
-          <Row icon={<CalendarIcon className="h-4 w-4 text-slate-400" />} label="Created" value={(b.created_at || "").slice(0, 10)} />
+          <Row icon={<CalendarIcon className="h-4 w-4 text-slate-400" />} label="Created" value={(b.created_at || "").slice(0, 10) || "—"} />
         </CardContent>
       </Card>
 
       <Card data-testid="branch-admin-card">
-        <CardHeader><CardTitle className="text-base">Branch Admin</CardTitle></CardHeader>
+        <CardHeader className="flex flex-row items-start justify-between gap-2">
+          <CardTitle className="text-base">Branch Admin</CardTitle>
+          <div className="flex gap-1">
+            <button onClick={() => setShowEditAdmin(true)} className="text-blue-500 hover:text-blue-700 p-1" title="Edit admin contact" data-testid="branch-admin-edit-btn"><Pencil className="h-4 w-4" /></button>
+            <button onClick={() => setShowReassign(true)} className="text-sky-600 hover:text-sky-700 p-1" title="Reassign admin" data-testid="branch-admin-reassign-btn"><UserCog className="h-4 w-4" /></button>
+          </div>
+        </CardHeader>
         <CardContent className="space-y-2">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-sky-100 text-sm font-bold text-sky-700">
-              {(b.admin_name || "?").split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
+              {(b.admin_name || "?").split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?"}
             </div>
             <div>
               <p className="font-semibold text-slate-900">{b.admin_name || "Unassigned"}</p>
@@ -103,6 +111,9 @@ const SummaryTab = ({ data }) => {
           </div>
         </CardContent>
       </Card>
+
+      {showEditAdmin && <EditAdminContactDialog branch={b} onClose={() => setShowEditAdmin(false)} onSaved={() => { setShowEditAdmin(false); onChanged && onChanged(); }} />}
+      {showReassign && <ReassignAdminDialog branchId={branchId} currentAdminId={b.admin_user_id} onClose={() => setShowReassign(false)} onSaved={() => { setShowReassign(false); onChanged && onChanged(); }} />}
     </div>
   );
 };
@@ -404,6 +415,69 @@ const EditMetaDialog = ({ branch, onClose, onSaved }) => {
           <option value="fitness">Fitness</option>
         </select>
         <div className="flex gap-2"><Button variant="outline" onClick={onClose} className="flex-1" data-testid="branch-edit-cancel">Cancel</Button><Button onClick={save} className="flex-1 bg-sky-600 hover:bg-sky-700" data-testid="branch-edit-submit">Save</Button></div>
+      </div>
+    </div>
+  );
+};
+
+const EditAdminContactDialog = ({ branch, onClose, onSaved }) => {
+  const [form, setForm] = useState({
+    admin_name: branch.admin_name || "",
+    admin_email: branch.admin_email || "",
+    admin_phone: branch.admin_phone || "",
+  });
+  const save = async () => {
+    if (!form.admin_name.trim()) { toast.error("Admin name required"); return; }
+    try {
+      await updateBranch(branch.id, form);
+      toast.success("Admin contact updated");
+      onSaved();
+    } catch (e) { toast.error(e?.response?.data?.detail || "Save failed"); }
+  };
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" data-testid="branch-admin-edit-dialog">
+      <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-xl space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-semibold">Edit Branch Admin Contact</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600" data-testid="branch-admin-edit-close"><X className="h-4 w-4" /></button>
+        </div>
+        <p className="text-xs text-slate-500">Updates the contact info shown on this branch (does not change the user's login credentials — manage those in HR → Roles & Credentials).</p>
+        <Field label="Display Name"><Input value={form.admin_name} onChange={(e) => setForm({ ...form, admin_name: e.target.value })} data-testid="branch-admin-edit-name" /></Field>
+        <Field label="Email"><Input value={form.admin_email} onChange={(e) => setForm({ ...form, admin_email: e.target.value })} placeholder="admin@example.com" data-testid="branch-admin-edit-email" /></Field>
+        <Field label="Phone"><Input value={form.admin_phone} onChange={(e) => setForm({ ...form, admin_phone: e.target.value })} placeholder="+91 …" data-testid="branch-admin-edit-phone" /></Field>
+        <div className="flex gap-2 pt-2"><Button variant="outline" onClick={onClose} className="flex-1" data-testid="branch-admin-edit-cancel">Cancel</Button><Button onClick={save} className="flex-1 bg-blue-600 hover:bg-blue-700" data-testid="branch-admin-edit-submit">Save</Button></div>
+      </div>
+    </div>
+  );
+};
+
+const ReassignAdminDialog = ({ branchId, currentAdminId, onClose, onSaved }) => {
+  const [candidates, setCandidates] = useState([]);
+  const [pick, setPick] = useState(currentAdminId || "");
+  useEffect(() => { hrBranchAdminCandidates().then(setCandidates).catch((e) => console.warn("[load candidates]", e?.message || e)); }, []);
+  const available = candidates.filter((c) => !c.assigned_branch || c.id === currentAdminId);
+
+  const save = async () => {
+    if (!pick) { toast.error("Pick a manager"); return; }
+    if (pick === currentAdminId) { toast.error("Already assigned to this branch"); return; }
+    try { await bmReassignAdmin(branchId, pick); toast.success("Manager reassigned"); onSaved(); }
+    catch (e) { toast.error(e?.response?.data?.detail || "Reassign failed"); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" data-testid="branch-admin-reassign-dialog">
+      <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-xl space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-semibold">Reassign Branch Admin</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600" data-testid="branch-admin-reassign-close"><X className="h-4 w-4" /></button>
+        </div>
+        <p className="text-xs text-slate-500">Only users with role <span className="font-semibold">branch_admin</span> who aren't already running another branch can be picked. Create more in HR → Roles & Credentials.</p>
+        <select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm" value={pick} onChange={(e) => setPick(e.target.value)} data-testid="branch-admin-reassign-select">
+          <option value="">— Select branch admin —</option>
+          {available.length === 0 && <option disabled>No available branch_admin users</option>}
+          {available.map((c) => <option key={c.id} value={c.id}>{c.full_name} · {c.email}{c.id === currentAdminId ? " (current)" : ""}</option>)}
+        </select>
+        <div className="flex gap-2 pt-2"><Button variant="outline" onClick={onClose} className="flex-1" data-testid="branch-admin-reassign-cancel">Cancel</Button><Button onClick={save} className="flex-1 bg-sky-600 hover:bg-sky-700" data-testid="branch-admin-reassign-submit">Reassign</Button></div>
       </div>
     </div>
   );
