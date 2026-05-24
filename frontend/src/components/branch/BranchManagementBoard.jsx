@@ -96,8 +96,8 @@ const CreationTab = ({ onDrillIn }) => {
                 <button onClick={(e) => { e.stopPropagation(); remove(b); }} className="text-red-500 hover:text-red-700" data-testid={`bm-branch-delete-${b.id}`}><Trash2 className="h-4 w-4" /></button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3" onClick={(e) => { /* propagate to card */ }}>
-              <div className="rounded-md border border-slate-200 bg-slate-50 p-3" onClick={(e) => e.stopPropagation()}>
+            <CardContent className="space-y-3">
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Branch Admin</p>
                 <p className="mt-1 text-sm font-medium text-slate-800">{b.admin_name || "—"}</p>
                 <p className="text-xs text-slate-500"><Mail className="inline h-3 w-3 mr-1" />{b.admin_email || "—"}</p>

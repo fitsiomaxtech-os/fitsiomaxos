@@ -44,6 +44,13 @@ Build FITSIOMAX OS - multi-role SaaS for physiotherapy/fitness business with:
 - Jr. Physio Board (PhysioBoard): Today / Calendar / Patients views. Complete a session with remarks. Submit weekly self-assessment.
 - Patient View token endpoint (`/api/v3/patient/view/{token}`): patient-facing JSON only — strips `head_physio_notes`, `head_physio_suggestions`, `head_physio_id`, `consultation_fee`, `package_amount`. Validated by iteration_21 tests for no internal-data leak.
 
+### Branch Detail Drill-in (NEW - Feb 2026) ✅
+- Clicking any branch card in Branch Management → comprehensive `BranchDetailPage` (not a modal).
+- 4 tabs: **Summary** (Name, Address, Opened Date, Opening Hours, Vertical, Created + Branch Admin contact card), **Staff** (4 toggle cards: branch admins / head physios / physios / doctors with full member listing), **Performance** (3 KPI cards + 4 sub-tabs: Appointments / Consultations / Packages / Follow-ups, each with Mini stats + ListTable), **Head Physio** (head-physio calendars, physio calendars, weekly post-treatment reviews).
+- New endpoint `GET /api/v3/branch-mgmt/{id}/detail` returns the full bundle in one call.
+- `V3BranchOut` + `V3BranchUpdate` extended with `opened_date`, `opening_hours`. Edit dialog persists both fields.
+- Tested in iter 27: backend 10/10 PASS · frontend ~100% PASS · zero new bugs.
+
 ### Branch Management Module (NEW - Feb 2026) ✅
 - New Super Admin top-level tab **"Branch Management"** (6th tab). Two sub-tabs:
   - **Creation & Manager**: 4 KPI cards (Total Branches / Available Managers / Active Leads / Total Doctors), branch cards with manager block + 4 stat tiles + reassign link + edit/delete; Add Branch dialog requires `branch_name + address + admin_user_id` (dropdown of un-assigned branch_admin users only); Edit dialog hides admin select; dedicated Reassign Manager dialog wires PATCH /admin.
