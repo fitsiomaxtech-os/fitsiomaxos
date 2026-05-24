@@ -9,6 +9,7 @@ import {
   updateBranch, deleteBranch, hrBranchAdminCandidates,
 } from "@/lib/api";
 import { BranchDetailPage } from "@/components/branch/BranchDetailPage";
+import { BranchFormDialogV2 } from "@/components/branch/BranchFormDialogV2";
 
 const TABS = [
   { key: "creation", label: "Creation & Manager", icon: Users },
@@ -116,7 +117,7 @@ const CreationTab = ({ onDrillIn }) => {
         ))}
       </div>
 
-      {showAdd && <BranchFormDialog branch={editing} candidates={candidates} onClose={() => { setShowAdd(false); setEditing(null); }} onSaved={() => { setShowAdd(false); setEditing(null); load(); }} />}
+      {showAdd && <BranchFormDialogV2 branch={editing} onClose={() => { setShowAdd(false); setEditing(null); }} onSaved={() => { setShowAdd(false); setEditing(null); load(); }} />}
 
       {reassigning && <ReassignAdminDialog branch={reassigning} candidates={candidates.filter((c) => !c.assigned_branch || c.id === reassigning.admin_user_id)} onClose={() => setReassigning(null)} onSaved={() => { setReassigning(null); load(); }} />}
     </div>

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { bmDetail, updateBranch, bmReassignAdmin, hrBranchAdminCandidates } from "@/lib/api";
+import { BranchFormDialogV2 } from "@/components/branch/BranchFormDialogV2";
 
 const TABS = [
   { key: "summary", label: "Summary", icon: BarChart3 },
@@ -60,7 +61,7 @@ export const BranchDetailPage = ({ branchId, onBack }) => {
       {tab === "performance" && <PerformanceTab perf={data.performance} />}
       {tab === "head_physio" && <HeadPhysioTab hp={data.head_physio_section} />}
 
-      {showEdit && <EditMetaDialog branch={b} onClose={() => setShowEdit(false)} onSaved={() => { setShowEdit(false); load(); }} />}
+      {showEdit && <BranchFormDialogV2 branch={b} onClose={() => setShowEdit(false)} onSaved={() => { setShowEdit(false); load(); }} />}
     </div>
   );
 };

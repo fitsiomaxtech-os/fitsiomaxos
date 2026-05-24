@@ -60,6 +60,10 @@ class V3BranchOut(BaseModel):
     vertical: str
     opened_date: Optional[str] = ""
     opening_hours: Optional[str] = ""
+    phone: Optional[str] = ""
+    email: Optional[str] = ""
+    map_location: Optional[str] = ""
+    weekly_hours: Optional[Dict[str, Any]] = None
     created_at: str
 
 
@@ -72,6 +76,10 @@ class V3BranchUpdate(BaseModel):
     vertical: Optional[str] = None
     opened_date: Optional[str] = None
     opening_hours: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    map_location: Optional[str] = None
+    weekly_hours: Optional[Dict[str, Any]] = None
 
 
 class V3DoctorCreate(BaseModel):

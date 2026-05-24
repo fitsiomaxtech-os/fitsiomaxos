@@ -18,6 +18,12 @@ class BranchAssignedCreate(BaseModel):
     admin_user_id: str = Field(..., description="Existing user with role=branch_admin")
     admin_phone: Optional[str] = ""
     vertical: Optional[str] = "offline_physiotherapy"
+    opened_date: Optional[str] = ""
+    opening_hours: Optional[str] = ""
+    phone: Optional[str] = ""
+    email: Optional[str] = ""
+    map_location: Optional[str] = ""
+    weekly_hours: Optional[Dict[str, Any]] = None
 
 
 class AssignAdmin(BaseModel):
@@ -69,6 +75,12 @@ async def create_branch_with_existing_admin(payload: BranchAssignedCreate, _: V3
         "admin_email": user.get("email", ""),
         "admin_phone": payload.admin_phone or "",
         "vertical": payload.vertical or "offline_physiotherapy",
+        "opened_date": payload.opened_date or "",
+        "opening_hours": payload.opening_hours or "",
+        "phone": payload.phone or "",
+        "email": payload.email or "",
+        "map_location": payload.map_location or "",
+        "weekly_hours": payload.weekly_hours or {},
         "created_at": now_iso(),
     }
     await v3_col("branches").insert_one(branch.copy())
