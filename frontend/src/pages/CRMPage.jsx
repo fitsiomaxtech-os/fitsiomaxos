@@ -49,6 +49,8 @@ import { BranchAdminBoard } from "@/components/BranchAdminBoard";
 import { HeadPhysioBoard } from "@/components/HeadPhysioBoard";
 import { PhysioBoard } from "@/components/PhysioBoard";
 import { MarketingBoard } from "@/components/marketing/MarketingBoard";
+import { PreSalesCRM } from "@/components/PreSalesCRM";
+import { PipelineStageManagement } from "@/components/PipelineStageManagement";
 
 const ROLE_META = {
   super_admin: { label: "Super Admin", icon: ShieldCheck },
@@ -629,6 +631,8 @@ export const CRMPage = ({ auth, onLogout }) => {
           <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-2" data-testid="super-admin-nav">
             <button onClick={() => setSuperAdminView("master")} className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition ${superAdminView === "master" ? "bg-sky-600 text-white" : "text-slate-600 hover:bg-slate-100"}`} data-testid="super-admin-tab-master">Master View</button>
             <button onClick={() => setSuperAdminView("marketing")} className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition ${superAdminView === "marketing" ? "bg-sky-600 text-white" : "text-slate-600 hover:bg-slate-100"}`} data-testid="super-admin-tab-marketing">Marketing Board</button>
+            <button onClick={() => setSuperAdminView("presales")} className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition ${superAdminView === "presales" ? "bg-sky-600 text-white" : "text-slate-600 hover:bg-slate-100"}`} data-testid="super-admin-tab-presales">Pre-Sales CRM</button>
+            <button onClick={() => setSuperAdminView("stages")} className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition ${superAdminView === "stages" ? "bg-sky-600 text-white" : "text-slate-600 hover:bg-slate-100"}`} data-testid="super-admin-tab-stages">Pipeline Stages</button>
           </div>
         )}
 
@@ -636,8 +640,16 @@ export const CRMPage = ({ auth, onLogout }) => {
           <MarketingBoard branches={branches} />
         )}
 
+        {showSuperAdminBoard && superAdminView === "presales" && (
+          <PreSalesCRM onManageStages={() => setSuperAdminView("stages")} />
+        )}
+
+        {showSuperAdminBoard && superAdminView === "stages" && (
+          <PipelineStageManagement onBack={() => setSuperAdminView("presales")} />
+        )}
+
         {showPreSalesBoard && (
-          <PreSalesBoard />
+          <PreSalesCRM />
         )}
 
         {(showSuperAdminBoard && superAdminView === "master") && (

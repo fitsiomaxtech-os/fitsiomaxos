@@ -155,3 +155,11 @@ export const mkUpdateSource = async (sourceId, payload) => (await api.patch(`/ma
 export const mkDeleteSource = async (sourceId) => (await api.delete(`/marketing/sources/${sourceId}`)).data;
 export const mkSyncSource = async (sourceId, rows) => (await api.post(`/marketing/sources/${sourceId}/sync`, { rows })).data;
 export const mkPerformance = async () => (await api.get("/marketing/performance")).data;
+
+
+// Pipeline Stages
+export const stagesList = async (type) => (await api.get(`/stages${type ? `?type=${type}` : ""}`)).data;
+export const stagesCreate = async (payload) => (await api.post("/stages", payload)).data;
+export const stagesUpdate = async (id, payload) => (await api.patch(`/stages/${id}`, payload)).data;
+export const stagesDelete = async (id) => (await api.delete(`/stages/${id}`)).data;
+export const stagesReorder = async (items) => (await api.post("/stages/reorder", { items })).data;

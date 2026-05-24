@@ -115,6 +115,15 @@ class V3LeadUpdate(BaseModel):
     stage: Optional[str] = None
     branch_id: Optional[str] = None
     extra_fields: Optional[Dict[str, str]] = None
+    location: Optional[str] = None
+    expected_consultation_date: Optional[str] = None
+    months_of_pain: Optional[int] = None
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    occupation: Optional[str] = None
+    department: Optional[str] = None
+    assigned_user_id: Optional[str] = None
+    assigned_user_name: Optional[str] = None
 
 
 class V3LeadOut(BaseModel):
@@ -137,6 +146,15 @@ class V3LeadOut(BaseModel):
     package_weeks: Optional[int] = None
     assigned_physio_id: Optional[str] = None
     assigned_physio_name: Optional[str] = None
+    location: Optional[str] = None
+    expected_consultation_date: Optional[str] = None
+    months_of_pain: Optional[int] = None
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    occupation: Optional[str] = None
+    department: Optional[str] = None
+    assigned_user_id: Optional[str] = None
+    assigned_user_name: Optional[str] = None
     created_at: str
     updated_at: str
 

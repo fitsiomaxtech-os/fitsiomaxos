@@ -1,0 +1,36 @@
+{
+  "summary": "Iteration 23 — End-to-end testing of new Pre-Sales CRM module + Pipeline Stage Management. Backend: 10/10 pytest passing — /api/v3/stages list-seed (pre_sales 6 + sales 8 with order 0..N and lead_count field), POST create (super_admin only, 403 for pre_sales), PATCH rename + is_final, DELETE blocked by 409 when in use ('New Lead' has 39 leads, correctly rejected), DELETE allowed on empty stages, POST /reorder persists. Lead schema PUT /api/v3/leads/{id} accepts and persists new fields location/expected_consultation_date/months_of_pain/age/gender/occupation/department/assigned_user_id/assigned_user_name (verified via list GET). Marketing sync regression: synced lead gets stage='New Lead'. Frontend: Super-admin login → top-nav shows 4 tabs (Master View / Marketing Board / Pre-Sales CRM / Pipeline Stages). Pre-Sales CRM renders Total Leads + 6 per-stage KPI cards (Total=94, New Lead=39, Pre-sales Qualified=8, Assigned to Branch=25, Branch Confirmed=4, Appointment Booked=9, Completed=9), Search input, 'Newest first' sort toggle, Source filter, 7 stage chips (All + 6), Manage Stages button, Create Lead button, leads table with masked phones/emails and eye-icon action buttons. Manage Stages routes to Pipeline Stage Management showing Pre-Sales(6)/Sales(8) tabs, Pre-Sales Pipeline Stages table with order/color/name/leads/final/actions columns and reorder arrows + edit pencil + delete trash icons. Master tab restores original Master Flow Snapshot. Pre-sales role login renders the same PreSalesCRM component without super-admin nav (gating verified).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "CRMPage Branch Booking <select>", "issues": ["Pre-existing console hydration warning: <span> cannot be a child of <option>. Caused by dev-instrumentation wrapper on appointment-lead <select>. Not introduced by this iteration — same as iteration 21/22."]},
+      {"screen": "Pre-sales role first paint", "issues": ["Two 403 console errors from CRMPage admin-only API calls (loadEverything calls master-board/sheet-connections regardless of role). Page renders fine — pre-existing from iteration 22."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_stages_iteration23.py",
+    "/app/test_reports/pytest/pytest_results_iteration23.xml"
+  ],
+  "action_items": [
+    "(Carried over from iteration 21/22) Remove <span> wrapper inside <option> in CRMPage Branch Booking lead <select> to eliminate hydration warning.",
+    "(Carried over) Gate the admin-only API calls in loadEverything() so pre_sales role doesn't trigger 403s.",
+    "(Optional) Add data-testid attributes to PreSalesCRM (kpi-total, stage-chip-{name}, create-lead-button, manage-stages-button, table-row-{id}, view-lead-{id}) and PipelineStageManagement (stages-tab-pre_sales, stage-row-{id}, stage-add-button, stage-edit-{id}, stage-delete-{id}, stage-reorder-up-{id}) for stable future automation. Currently only 'stages-tab-sales' was found; rest of tests had to fall back to text-based selectors."
+  ],
+  "critical_code_review_comments": [
+    "v3_stages.py DELETE uses lead.stage / lead.branch_stage by NAME for in-use check. If a stage is renamed via PATCH, references are propagated (good), but if a lead was inserted with a stage value that no longer exists as a stage doc (e.g., 'Walk-in'), the count is 0 and the stage can be deleted even though leads reference it. Low risk — only matters for legacy seed values.",
+    "v3_stages.py POST /reorder silently ignores items without id/order and never validates that order is unique per type. Two stages could end up sharing the same order. Consider bulk validation.",
+    "_ensure_seed() inserts is_final=True only for 'Completed' (pre_sales) and 'Package Paid' + 'Jr. Physio Assigned' (sales). 'Jr. Physio Assigned' as is_final is reasonable but consider documenting.",
+    "Lead Edit Modal (per the PR) only renders branch picker when department === 'offline_physio'. Validated indirectly via backend persistence — Lead with department='offline_physio' was saved and returned correctly. Frontend dialog could not be exercised end-to-end programmatically (eye-button selectors were ambiguous), so visual confirmation should be done by main agent.",
+    "PreSalesCRM and PipelineStageManagement lack data-testid attributes on key interactive elements — testing relied on text selectors and KPI count probes."
+  ],
+  "updated_files": ["/app/backend/tests/test_stages_iteration23.py"],
+  "success_rate": {"backend": "100% (10/10)", "frontend": "~85% — nav/tabs/KPIs/chips/role-gating fully verified; Lead Detail Dialog and Lead Edit Modal could not be opened via selectors (no data-testid on eye-icon), so the conditional branch-picker-when-offline_physio flow was only confirmed at the API level"},
+  "test_credentials": "From /app/memory/test_credentials.md — super_admin admin@fitsiomax.com/admin123, pre_sales presales@fitsiomax.com/presales123. localStorage key: physiofit_crm_session.",
+  "seed_data_creation": "Tests created and cleaned up TEST_Stage_*, TEST_Rename_*, TEST_Del_*, TEST_LeadFields_*, TEST_Src23_*, TEST_MS_* docs. One TEST_LeadFields_2e941 lead and TEST_MS_f78c1 lead remain in DB (visible in screenshots) — harmless for next iteration.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend stage CRUD is fully wired. POST/PATCH/DELETE require super_admin; GET works for any authenticated user. Reorder accepts {items:[{id,order}]}. Lead schema extended fields (location, expected_consultation_date, months_of_pain, age, gender, occupation, department, assigned_user_id, assigned_user_name) all round-trip correctly via PUT → GET /api/v3/leads. POST /api/v3/leads/manual is the lead-create endpoint (NOT /api/v3/leads). Frontend lacks data-testid on PreSalesCRM/PipelineStageManagement — main agent should add them for future stable automation. Lead Detail Dialog / Lead Edit Modal flow was NOT exercised end-to-end; verify the 'branch picker only when department=offline_physio' visually.",
+  "rca_of_the_issue": "No new bugs. One test had to be patched: the create-lead endpoint is /api/v3/leads/manual (not /api/v3/leads); the test now uses the correct path and verifies persistence via list GET. All other endpoints behave per spec."
+}
