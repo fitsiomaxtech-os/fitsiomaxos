@@ -199,6 +199,13 @@ export const bmPerformance = async (branchId) => (await api.get(`/branch-mgmt/${
 export const bmPerformanceSummary = async () => (await api.get("/branch-mgmt/performance-summary")).data;
 export const bmDetail = async (branchId) => (await api.get(`/branch-mgmt/${branchId}/detail`)).data;
 
+// Google Sheets OAuth
+export const gsStatus = async () => (await api.get("/marketing/google-sheets/status")).data;
+export const gsAuthUrl = async () => (await api.get("/marketing/google-sheets/auth")).data;
+export const gsDisconnect = async () => (await api.post("/marketing/google-sheets/disconnect")).data;
+export const gsListSpreadsheets = async (nameContains) => (await api.get(`/marketing/google-sheets/spreadsheets${nameContains ? `?name_contains=${encodeURIComponent(nameContains)}` : ""}`)).data;
+export const gsPull = async (sourceId) => (await api.post(`/marketing/google-sheets/pull/${sourceId}`)).data;
+
 export const hrCreateEmployee = async (payload) => (await api.post("/hr/employees", payload)).data;
 export const hrUpdateEmployee = async (id, payload) => (await api.patch(`/hr/employees/${id}`, payload)).data;
 export const hrDeleteEmployee = async (id) => (await api.delete(`/hr/employees/${id}`)).data;

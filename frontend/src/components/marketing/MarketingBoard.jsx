@@ -12,6 +12,7 @@ import {
   mkGetTeam, mkCreateTeamMember, mkAllLeads, mkAssignLead, mkDeleteLead, mkBulkDelete,
   mkGetSources, mkCreateSource, mkUpdateSource, mkDeleteSource, mkSyncSource,
   mkPerformance,
+  gsStatus, gsAuthUrl, gsDisconnect, gsListSpreadsheets, gsPull,
 } from "@/lib/api";
 import { MaskedContact } from "@/components/MaskedContact";
 import { SourcePill } from "@/components/marketing/SourcePill";
@@ -110,23 +111,87 @@ const OverviewTab = ({ branches }) => {
 
 const SourcesTab = () => {
   const [sources, setSources] = useState([]);
+  const [gs, setGs] = useState({ connected: false });
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerList, setPickerList] = useState([]);
+  const [pickerQuery, setPickerQuery] = useState("Fitsiomax_lead");
   const [showAdd, setShowAdd] = useState(false);
   const [showSync, setShowSync] = useState(null);
   const [showMap, setShowMap] = useState(null);
-  const [form, setForm] = useState({ name: "", sheet_url: "", source_type: "google_sheets", headers: "" });
-  const [syncRows, setSyncRows] = useState(`[\n  {"name":"Aarav Sharma","phone":"9000000001","email":"aarav@example.com","city":"Chennai","condition":"Lower back pain","age":34},\n  {"name":"Meera Iyer","phone":"9000000002","email":"meera@example.com","city":"Coimbatore","condition":"Knee pain","age":28}\n]`);
+  const [form, setForm] = useState({ name: "", sheet_url: "", spreadsheet_id: "", sheet_name: "Sheet1", source_type: "google_sheets", headers: "" });
+  const [syncRows, setSyncRows] = useState(`[\n  {"name":"Aarav Sharma","phone":"9000000001","email":"aarav@example.com","city":"Chennai","condition":"Lower back pain","age":34}\n]`);
   const [syncResult, setSyncResult] = useState(null);
+  const [pullResult, setPullResult] = useState(null);
 
   const load = useCallback(() => mkGetSources().then(setSources).catch((e) => console.warn("[load failed]", e?.message || e)), []);
-  useEffect(() => { load(); }, [load]);
+  const loadGs = useCallback(() => gsStatus().then(setGs).catch((e) => console.warn("[gs status]", e?.message || e)), []);
+  useEffect(() => { load(); loadGs(); }, [load, loadGs]);
+
+  // OAuth result detection (?sheets_connect=success&email=...)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("sheets_connect") === "success") {
+      toast.success(`Google connected: ${params.get("email") || "OK"}`);
+      window.history.replaceState({}, "", window.location.pathname);
+      loadGs();
+    } else if (params.get("sheets_connect") === "failed") {
+      toast.error(`Google connect failed: ${params.get("reason") || "unknown"}`);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [loadGs]);
+
+  const connectGoogle = async () => {
+    try {
+      const r = await gsAuthUrl();
+      window.location.href = r.auth_url;
+    } catch (e) { toast.error(e?.response?.data?.detail || "Failed to start OAuth"); }
+  };
+
+  const disconnectGoogle = async () => {
+    if (!window.confirm("Disconnect Google? All synced sources will need to reconnect.")) return;
+    await gsDisconnect();
+    toast.success("Disconnected");
+    loadGs();
+  };
+
+  const openPicker = async () => {
+    if (!gs.connected) { toast.error("Connect Google first"); return; }
+    setPickerOpen(true);
+    try {
+      const files = await gsListSpreadsheets(pickerQuery);
+      setPickerList(files);
+    } catch (e) { toast.error(e?.response?.data?.detail || "Drive API error"); }
+  };
+
+  const refreshPicker = async () => {
+    try { setPickerList(await gsListSpreadsheets(pickerQuery)); }
+    catch (e) { toast.error(e?.response?.data?.detail || "Failed"); }
+  };
+
+  const pickSpreadsheet = (file) => {
+    setForm({ ...form, name: form.name || file.name, sheet_url: `https://docs.google.com/spreadsheets/d/${file.id}`, spreadsheet_id: file.id, source_type: "google_sheets" });
+    setPickerOpen(false);
+    setShowAdd(true);
+  };
+
+  const pullNow = async (s) => {
+    setPullResult(null);
+    try {
+      const res = await gsPull(s.id);
+      setPullResult({ source: s, res });
+      if (res.imported > 0) toast.success(`Pulled ${res.imported} new leads from ${s.name}`);
+      else toast(`No new leads. ${res.skipped_duplicate || 0} duplicates, ${res.skipped_no_phone || 0} missing phone.`);
+      load();
+    } catch (e) { toast.error(e?.response?.data?.detail || "Pull failed"); }
+  };
 
   const submit = async () => {
     if (!form.name.trim()) { toast.error("Source name required"); return; }
     const headers = form.headers.split(",").map((h) => h.trim()).filter(Boolean);
     try {
-      await mkCreateSource({ name: form.name, sheet_url: form.sheet_url, source_type: form.source_type, headers });
+      await mkCreateSource({ name: form.name, sheet_url: form.sheet_url, source_type: form.source_type, headers, spreadsheet_id: form.spreadsheet_id, sheet_name: form.sheet_name });
       toast.success("Source added");
-      setForm({ name: "", sheet_url: "", source_type: "google_sheets", headers: "" });
+      setForm({ name: "", sheet_url: "", spreadsheet_id: "", sheet_name: "Sheet1", source_type: "google_sheets", headers: "" });
       setShowAdd(false);
       load();
     } catch (e) { toast.error(e?.response?.data?.detail || "Create failed"); }
@@ -163,6 +228,45 @@ const SourcesTab = () => {
 
   return (
     <div className="space-y-4" data-testid="mk-sources-tab">
+      <Card data-testid="gs-bar" className="border-slate-200 bg-white">
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+          <div className="flex items-center gap-3">
+            <svg viewBox="0 0 48 48" className="h-8 w-8">
+              <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
+              <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
+              <path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24c0 3.55.85 6.91 2.34 9.88l7.35-5.7z"/>
+              <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/>
+            </svg>
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Google Sheets</p>
+              {gs.connected ? (
+                <p className="text-xs text-emerald-600">Connected as <span className="font-semibold">{gs.email || "—"}</span></p>
+              ) : (
+                <p className="text-xs text-slate-500">Click to connect a Google account and pull leads automatically.</p>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-2">
+            {gs.connected ? (
+              <>
+                <Button variant="outline" size="sm" onClick={openPicker} data-testid="gs-browse-btn"><LinkIcon className="mr-1 h-3 w-3" />Browse my Sheets</Button>
+                <Button variant="outline" size="sm" onClick={disconnectGoogle} className="text-red-600 hover:bg-red-50" data-testid="gs-disconnect-btn">Disconnect</Button>
+              </>
+            ) : (
+              <Button onClick={connectGoogle} className="bg-white text-slate-800 border border-slate-300 hover:bg-slate-50 shadow-sm" data-testid="gs-connect-btn">
+                <svg viewBox="0 0 48 48" className="mr-2 h-4 w-4">
+                  <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
+                  <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
+                  <path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24c0 3.55.85 6.91 2.34 9.88l7.35-5.7z"/>
+                  <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/>
+                </svg>
+                Continue with Google
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-600">Connect data feeds. Paste sheet headers to auto-detect column mappings.</p>
         <Button onClick={() => setShowAdd(true)} data-testid="mk-add-source-btn"><Plus className="mr-1 h-4 w-4" />Add Source</Button>
@@ -183,13 +287,22 @@ const SourcesTab = () => {
             </CardHeader>
             <CardContent className="space-y-2 text-xs text-slate-600">
               {s.sheet_url && <p className="truncate"><LinkIcon className="mr-1 inline h-3 w-3" />{s.sheet_url}</p>}
+              {s.spreadsheet_id && <p className="text-[10px] text-slate-400">ID: <code>{s.spreadsheet_id.slice(0, 24)}…</code></p>}
               <p>Rows: <span className="font-semibold">{s.row_count || 0}</span> · Last sync: {s.last_synced ? s.last_synced.slice(0, 16).replace("T", " ") : "Never"}</p>
               <p>Mappings: <span className="font-semibold">{Object.keys(s.column_mapping || {}).length}</span> · Custom fields: {(s.custom_fields || []).length}</p>
               <div className="flex flex-wrap gap-2 pt-2">
-                <Button size="sm" variant="outline" onClick={() => setShowSync(s)} data-testid={`mk-source-sync-${s.id}`}><RefreshCw className="mr-1 h-3 w-3" />Sync Now</Button>
+                {s.source_type === "google_sheets" && s.spreadsheet_id && gs.connected && (
+                  <Button size="sm" onClick={() => pullNow(s)} className="bg-emerald-600 hover:bg-emerald-700" data-testid={`gs-pull-${s.id}`}><RefreshCw className="mr-1 h-3 w-3" />Pull from Sheet</Button>
+                )}
+                <Button size="sm" variant="outline" onClick={() => setShowSync(s)} data-testid={`mk-source-sync-${s.id}`}><RefreshCw className="mr-1 h-3 w-3" />Manual Sync (JSON)</Button>
                 <Button size="sm" variant="outline" onClick={() => setShowMap(s)} data-testid={`mk-source-map-${s.id}`}>Edit Mapping</Button>
                 <Button size="sm" variant="outline" onClick={() => toggleActive(s)} data-testid={`mk-source-toggle-${s.id}`}>{s.is_active ? "Deactivate" : "Activate"}</Button>
               </div>
+              {pullResult && pullResult.source.id === s.id && (
+                <div className="rounded-md border border-emerald-200 bg-emerald-50 p-2 text-[11px] text-emerald-800" data-testid={`gs-pull-result-${s.id}`}>
+                  Imported <span className="font-bold">{pullResult.res.imported}</span> of {pullResult.res.rows_received} rows · {pullResult.res.skipped_duplicate || 0} dup · {pullResult.res.skipped_no_phone || 0} no phone
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}

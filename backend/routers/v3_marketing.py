@@ -110,6 +110,7 @@ class MarketingSourceCreate(BaseModel):
     name: str
     sheet_url: Optional[str] = ""
     sheet_name: Optional[str] = "Sheet1"
+    spreadsheet_id: Optional[str] = ""
     source_type: Literal["meta", "seo", "referral", "walk_in", "website", "csv_import", "google_sheets", "other"] = "google_sheets"
     headers: Optional[List[str]] = None
 
@@ -340,7 +341,7 @@ async def list_sources(_: V3UserOut = Depends(v3_require_roles("super_admin"))):
 
 @router.post("/sources")
 async def create_source(payload: MarketingSourceCreate, _: V3UserOut = Depends(v3_require_roles("super_admin"))):
-    spreadsheet_id = extract_spreadsheet_id(payload.sheet_url) if payload.sheet_url else ""
+    spreadsheet_id = payload.spreadsheet_id or (extract_spreadsheet_id(payload.sheet_url) if payload.sheet_url else "")
     column_mapping = auto_map_columns(payload.headers or []) if payload.headers else {}
     detected_custom = [h for h in (payload.headers or []) if h not in column_mapping.values()]
     source = {
