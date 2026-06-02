@@ -121,7 +121,12 @@ async def auth_start(redirect: bool = Query(False), _: V3UserOut = Depends(v3_re
     flow = Flow.from_client_config(_client_config(), scopes=SCOPES, redirect_uri=REDIRECT_URI)
     state = str(uuid.uuid4())
     url, _state = flow.authorization_url(access_type="offline", prompt="consent", state=state, include_granted_scopes="true")
-    await v3_col("google_sheets_states").insert_one({"state": state, "created_at": now_iso()})
+    # google-auth-oauthlib 1.x auto-generates a PKCE code_verifier. Persist it so /callback can complete the exchange.
+    await v3_col("google_sheets_states").insert_one({
+        "state": state,
+        "code_verifier": flow.code_verifier,
+        "created_at": now_iso(),
+    })
     if redirect:
         return RedirectResponse(url)
     return {"auth_url": url, "state": state}
@@ -129,15 +134,19 @@ async def auth_start(redirect: bool = Query(False), _: V3UserOut = Depends(v3_re
 
 @router.get("/callback")
 async def auth_callback(code: str, state: Optional[str] = None):
-    # Verify state (best-effort — tolerate state collection unavailability)
+    # Verify state and retrieve the matching code_verifier (required for PKCE token exchange).
+    code_verifier = None
     if state:
-        valid = await v3_col("google_sheets_states").find_one({"state": state}, {"_id": 0, "state": 1})
+        valid = await v3_col("google_sheets_states").find_one({"state": state}, {"_id": 0})
         if not valid:
             return RedirectResponse(f"{FRONTEND_URL}/?sheets_connect=failed&reason=invalid_state")
+        code_verifier = valid.get("code_verifier")
         await v3_col("google_sheets_states").delete_one({"state": state})
 
     try:
         flow = Flow.from_client_config(_client_config(), scopes=SCOPES, redirect_uri=REDIRECT_URI)
+        if code_verifier:
+            flow.code_verifier = code_verifier
         await asyncio.to_thread(flow.fetch_token, code=code)
     except Exception as e:
         return RedirectResponse(f"{FRONTEND_URL}/?sheets_connect=failed&reason={re.sub(r'[^a-zA-Z0-9_-]', '_', str(e)[:60])}")

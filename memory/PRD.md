@@ -131,7 +131,16 @@ Build FITSIOMAX OS - multi-role SaaS for physiotherapy/fitness business with:
 
 ### P0
 - Domain → VPS connection (user is starting deployment; awaiting domain name + VPS IP)
-- Live Google Sheets OAuth flow for Business Dev role (currently CSV/JSON sync only)
+- Live end-to-end Google Sheets OAuth — **manual user verification pending** (technical wiring complete; PKCE fix applied Feb 2026)
+
+### Google Sheets OAuth (Feb 2026) ✅ Technical wiring complete
+- Backend `/api/v3/marketing/google-sheets/{status,auth,callback,disconnect,spreadsheets,pull/{id}}` (`routers/v3_google_sheets.py`)
+- **PKCE fix**: `code_verifier` is now persisted in `google_sheets_states` alongside `state` so `/callback` can complete the token exchange (google-auth-oauthlib 1.3.0 auto-enables PKCE on web flows)
+- Tokens stored in `google_sheets_tokens` collection (single shared doc `_company_shared_`)
+- Frontend Marketing Board → Lead Sources: "Continue with Google" → Google consent → callback → redirect back with `?sheets_connect=success&email=...`
+- CRMPage + MarketingBoard auto-deep-link to **Marketing > Lead Sources** when callback param present
+- Browse Sheets via Drive API + Pull rows via Sheets API → same dedupe + round-robin engine as JSON sync
+- `.env` keys: `GOOGLE_SHEETS_CLIENT_ID`, `GOOGLE_SHEETS_CLIENT_SECRET`, `GOOGLE_SHEETS_REDIRECT_URI`, `FRONTEND_URL`
 
 ### P1
 - Patient-facing magic-link email (Resend / SendGrid) when Head Physio recommends a package

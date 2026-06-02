@@ -233,7 +233,12 @@ export const CRMPage = ({ auth, onLogout }) => {
 
   const [preSalesStageTab, setPreSalesStageTab] = useState("All");
   const [preSalesViewType, setPreSalesViewType] = useState("kanban");
-  const [superAdminView, setSuperAdminView] = useState("master");
+  const [superAdminView, setSuperAdminView] = useState(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("sheets_connect")) {
+      return "marketing";
+    }
+    return "master";
+  });
 
   const safeCall = async (fn, fallback) => {
     try {

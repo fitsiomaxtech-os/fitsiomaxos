@@ -671,7 +671,12 @@ const DialogShell = ({ title, onClose, children, testid }) => (
 // ============ Root ============
 
 export const MarketingBoard = ({ branches = [] }) => {
-  const [tab, setTab] = useState("overview");
+  const [tab, setTab] = useState(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("sheets_connect")) {
+      return "lead_sources";
+    }
+    return "overview";
+  });
   const [team, setTeam] = useState({ pre_sales: [], sales: [] });
   const reloadTeam = useCallback(() => mkGetTeam().then(setTeam).catch((e) => console.warn("[load failed]", e?.message || e)), []);
   useEffect(() => { reloadTeam(); }, [reloadTeam]);
