@@ -42,10 +42,6 @@ FRONTEND_URL = os.environ.get("FRONTEND_URL", "")
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets.readonly",
-    "https://www.googleapis.com/auth/drive.readonly",
-    "https://www.googleapis.com/auth/userinfo.email",
-    "https://www.googleapis.com/auth/userinfo.profile",
-    "openid",
 ]
 
 
@@ -110,7 +106,6 @@ async def status(_: V3UserOut = Depends(v3_require_roles("super_admin", "busines
         return {"connected": False}
     return {
         "connected": bool(doc.get("refresh_token")),
-        "email": doc.get("email"),
         "connected_at": doc.get("connected_at"),
         "scopes": doc.get("scopes", []),
     }
@@ -152,13 +147,6 @@ async def auth_callback(code: str, state: Optional[str] = None):
         return RedirectResponse(f"{FRONTEND_URL}/?sheets_connect=failed&reason={re.sub(r'[^a-zA-Z0-9_-]', '_', str(e)[:60])}")
 
     creds: Credentials = flow.credentials
-    # Fetch user email
-    user_email = ""
-    try:
-        userinfo = await asyncio.to_thread(lambda: build("oauth2", "v2", credentials=creds).userinfo().get().execute())
-        user_email = userinfo.get("email", "")
-    except Exception:
-        pass
 
     expires_iso = creds.expiry.replace(tzinfo=timezone.utc).isoformat() if creds.expiry else None
     await v3_col("google_sheets_tokens").update_one(
@@ -169,12 +157,11 @@ async def auth_callback(code: str, state: Optional[str] = None):
             "refresh_token": creds.refresh_token,
             "expires_at": expires_iso,
             "scopes": list(creds.scopes or SCOPES),
-            "email": user_email,
             "connected_at": now_iso(),
         }},
         upsert=True,
     )
-    return RedirectResponse(f"{FRONTEND_URL}/?sheets_connect=success&email={user_email}")
+    return RedirectResponse(f"{FRONTEND_URL}/?sheets_connect=success")
 
 
 @router.post("/disconnect")
@@ -183,23 +170,18 @@ async def disconnect(_: V3UserOut = Depends(v3_require_roles("super_admin"))):
     return {"disconnected": True}
 
 
-# ---------- Sheets list (for source picker) ----------
+# ---------- Sheets list ----------
+# Disabled: listing all spreadsheets requires Drive scope.
+# We intentionally use only `spreadsheets.readonly` (no Drive, no email).
+# Users paste the Google Sheet URL in the Add Source dialog; the spreadsheet
+# ID is extracted from the URL and used directly to read rows.
 
 @router.get("/spreadsheets")
-async def list_spreadsheets(name_contains: Optional[str] = None, _: V3UserOut = Depends(v3_require_roles("super_admin"))):
-    creds = await _get_creds()
-    if not creds:
-        raise HTTPException(status_code=400, detail="Not connected to Google. Click 'Continue with Google' first.")
-    try:
-        drive = await asyncio.to_thread(lambda: build("drive", "v3", credentials=creds))
-        q = "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false"
-        if name_contains:
-            safe = name_contains.replace("'", "\\'")
-            q += f" and name contains '{safe}'"
-        result = await asyncio.to_thread(lambda: drive.files().list(q=q, fields="files(id, name, modifiedTime)", pageSize=50, orderBy="modifiedTime desc").execute())
-        return result.get("files", [])
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Drive API error: {str(e)[:200]}")
+async def list_spreadsheets(_: V3UserOut = Depends(v3_require_roles("super_admin"))):
+    raise HTTPException(
+        status_code=400,
+        detail="Listing your sheets is disabled by design (no Drive access requested). Paste the Google Sheet URL in 'Add Source' instead.",
+    )
 
 
 # ---------- Pull (real Sheets API → existing dedupe/import logic) ----------

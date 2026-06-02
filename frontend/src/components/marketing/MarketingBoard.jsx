@@ -12,7 +12,7 @@ import {
   mkGetTeam, mkCreateTeamMember, mkAllLeads, mkAssignLead, mkDeleteLead, mkBulkDelete,
   mkGetSources, mkCreateSource, mkUpdateSource, mkDeleteSource, mkSyncSource,
   mkPerformance,
-  gsStatus, gsAuthUrl, gsDisconnect, gsListSpreadsheets, gsPull,
+  gsStatus, gsAuthUrl, gsDisconnect, gsPull,
 } from "@/lib/api";
 import { MaskedContact } from "@/components/MaskedContact";
 import { SourcePill } from "@/components/marketing/SourcePill";
@@ -112,9 +112,6 @@ const OverviewTab = ({ branches }) => {
 const SourcesTab = () => {
   const [sources, setSources] = useState([]);
   const [gs, setGs] = useState({ connected: false });
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerList, setPickerList] = useState([]);
-  const [pickerQuery, setPickerQuery] = useState("Fitsiomax_lead");
   const [showAdd, setShowAdd] = useState(false);
   const [showSync, setShowSync] = useState(null);
   const [showMap, setShowMap] = useState(null);
@@ -127,11 +124,11 @@ const SourcesTab = () => {
   const loadGs = useCallback(() => gsStatus().then(setGs).catch((e) => console.warn("[gs status]", e?.message || e)), []);
   useEffect(() => { load(); loadGs(); }, [load, loadGs]);
 
-  // OAuth result detection (?sheets_connect=success&email=...)
+  // OAuth result detection (?sheets_connect=success)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("sheets_connect") === "success") {
-      toast.success(`Google connected: ${params.get("email") || "OK"}`);
+      toast.success("Google Sheets connected");
       window.history.replaceState({}, "", window.location.pathname);
       loadGs();
     } else if (params.get("sheets_connect") === "failed") {
@@ -154,24 +151,15 @@ const SourcesTab = () => {
     loadGs();
   };
 
-  const openPicker = async () => {
-    if (!gs.connected) { toast.error("Connect Google first"); return; }
-    setPickerOpen(true);
-    try {
-      const files = await gsListSpreadsheets(pickerQuery);
-      setPickerList(files);
-    } catch (e) { toast.error(e?.response?.data?.detail || "Drive API error"); }
+  // Extract spreadsheet ID from any Google Sheets URL: /spreadsheets/d/{ID}/...
+  const extractSheetId = (url) => {
+    if (!url) return "";
+    const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+    return m ? m[1] : "";
   };
 
-  const refreshPicker = async () => {
-    try { setPickerList(await gsListSpreadsheets(pickerQuery)); }
-    catch (e) { toast.error(e?.response?.data?.detail || "Failed"); }
-  };
-
-  const pickSpreadsheet = (file) => {
-    setForm({ ...form, name: form.name || file.name, sheet_url: `https://docs.google.com/spreadsheets/d/${file.id}`, spreadsheet_id: file.id, source_type: "google_sheets" });
-    setPickerOpen(false);
-    setShowAdd(true);
+  const onSheetUrlChange = (url) => {
+    setForm({ ...form, sheet_url: url, spreadsheet_id: extractSheetId(url) || form.spreadsheet_id });
   };
 
   const pullNow = async (s) => {
@@ -187,9 +175,14 @@ const SourcesTab = () => {
 
   const submit = async () => {
     if (!form.name.trim()) { toast.error("Source name required"); return; }
+    const sheetId = form.spreadsheet_id || extractSheetId(form.sheet_url);
+    if (form.source_type === "google_sheets" && !sheetId) {
+      toast.error("Paste a valid Google Sheet URL (must contain /spreadsheets/d/<ID>/)");
+      return;
+    }
     const headers = form.headers.split(",").map((h) => h.trim()).filter(Boolean);
     try {
-      await mkCreateSource({ name: form.name, sheet_url: form.sheet_url, source_type: form.source_type, headers, spreadsheet_id: form.spreadsheet_id, sheet_name: form.sheet_name });
+      await mkCreateSource({ name: form.name, sheet_url: form.sheet_url, source_type: form.source_type, headers, spreadsheet_id: sheetId, sheet_name: form.sheet_name || "Sheet1" });
       toast.success("Source added");
       setForm({ name: "", sheet_url: "", spreadsheet_id: "", sheet_name: "Sheet1", source_type: "google_sheets", headers: "" });
       setShowAdd(false);
@@ -240,18 +233,15 @@ const SourcesTab = () => {
             <div>
               <p className="text-sm font-semibold text-slate-800">Google Sheets</p>
               {gs.connected ? (
-                <p className="text-xs text-emerald-600">Connected as <span className="font-semibold">{gs.email || "—"}</span></p>
+                <p className="text-xs text-emerald-600">Connected · <span className="text-slate-500">Sheets read-only access only</span></p>
               ) : (
-                <p className="text-xs text-slate-500">Click to connect a Google account and pull leads automatically.</p>
+                <p className="text-xs text-slate-500">Connect Google to auto-pull leads (Sheets read-only — no Drive, no email).</p>
               )}
             </div>
           </div>
           <div className="flex gap-2">
             {gs.connected ? (
-              <>
-                <Button variant="outline" size="sm" onClick={openPicker} data-testid="gs-browse-btn"><LinkIcon className="mr-1 h-3 w-3" />Browse my Sheets</Button>
-                <Button variant="outline" size="sm" onClick={disconnectGoogle} className="text-red-600 hover:bg-red-50" data-testid="gs-disconnect-btn">Disconnect</Button>
-              </>
+              <Button variant="outline" size="sm" onClick={disconnectGoogle} className="text-red-600 hover:bg-red-50" data-testid="gs-disconnect-btn">Disconnect</Button>
             ) : (
               <Button onClick={connectGoogle} className="bg-white text-slate-800 border border-slate-300 hover:bg-slate-50 shadow-sm" data-testid="gs-connect-btn">
                 <svg viewBox="0 0 48 48" className="mr-2 h-4 w-4">
@@ -315,9 +305,23 @@ const SourcesTab = () => {
           <select className="h-9 w-full rounded-md border border-slate-200 px-3 text-sm" value={form.source_type} onChange={(e) => setForm({ ...form, source_type: e.target.value })} data-testid="mk-add-source-type">
             {["meta", "seo", "referral", "walk_in", "website", "csv_import", "google_sheets", "other"].map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
-          <Input placeholder="Google Sheet URL (optional)" value={form.sheet_url} onChange={(e) => setForm({ ...form, sheet_url: e.target.value })} data-testid="mk-add-source-url" />
-          <Input placeholder="Headers (comma separated, e.g. Lead Name, Mobile, Email)" value={form.headers} onChange={(e) => setForm({ ...form, headers: e.target.value })} data-testid="mk-add-source-headers" />
-          <p className="text-xs text-slate-400">Headers will be auto-mapped to standard fields (name, phone, email, vertical, condition, age, preferred_branch, budget, notes).</p>
+          {form.source_type === "google_sheets" && (
+            <>
+              <Input placeholder="Paste Google Sheet URL (https://docs.google.com/spreadsheets/d/...)" value={form.sheet_url} onChange={(e) => onSheetUrlChange(e.target.value)} data-testid="mk-add-source-url" />
+              {form.spreadsheet_id && (
+                <p className="text-[10px] text-emerald-600">✓ Sheet ID detected: <code className="rounded bg-emerald-50 px-1">{form.spreadsheet_id.slice(0, 24)}…</code></p>
+              )}
+              <Input placeholder="Worksheet/Tab name (default: Sheet1)" value={form.sheet_name} onChange={(e) => setForm({ ...form, sheet_name: e.target.value })} data-testid="mk-add-source-sheetname" />
+              <p className="text-xs text-amber-700 bg-amber-50 rounded p-2">
+                <strong>Important:</strong> the sheet must be either accessible to the Google account you connected, OR shared as “Anyone with the link can view”.
+              </p>
+            </>
+          )}
+          {form.source_type !== "google_sheets" && (
+            <Input placeholder="Source URL (optional, for reference)" value={form.sheet_url} onChange={(e) => setForm({ ...form, sheet_url: e.target.value })} data-testid="mk-add-source-url" />
+          )}
+          <Input placeholder="Headers (comma separated, e.g. Lead Name, Mobile, Email) — optional" value={form.headers} onChange={(e) => setForm({ ...form, headers: e.target.value })} data-testid="mk-add-source-headers" />
+          <p className="text-xs text-slate-400">Headers auto-map to: name, phone, email, vertical, condition, age, preferred_branch, budget, notes.</p>
           <Button onClick={submit} className="w-full" data-testid="mk-add-source-submit">Create Source</Button>
         </DialogShell>
       )}
