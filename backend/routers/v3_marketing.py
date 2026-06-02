@@ -386,20 +386,37 @@ async def sync_source(source_id: str, payload: MarketingSyncInput, _: V3UserOut 
     source = await v3_col("marketing_sources").find_one({"id": source_id}, {"_id": 0})
     if not source:
         raise HTTPException(status_code=404, detail="Source not found")
-    mapping = source.get("column_mapping", {}) or {}
-    phone_key = mapping.get("phone", "phone")
+    mapping = dict(source.get("column_mapping", {}) or {})
+    # If mapping is missing entries, auto-map from the FIRST row's keys
+    if payload.rows and not all(k in mapping for k in ("name", "phone")):
+        first_row_keys = list(payload.rows[0].keys())
+        inferred = auto_map_columns(first_row_keys)
+        for k, v in inferred.items():
+            mapping.setdefault(k, v)
 
+    if "phone" not in mapping:
+        # Last-ditch fallback: treat row['phone'] as phone
+        mapping["phone"] = "phone"
+
+    phone_key = mapping["phone"]
     imported = 0
-    skipped = 0
-    for row in payload.rows:
+    skipped_no_phone = 0
+    skipped_duplicate = 0
+    sample_errors: List[str] = []
+
+    for idx, row in enumerate(payload.rows):
         phone_raw = str(row.get(phone_key, "") or "").strip()
         phone_norm = normalize_phone(phone_raw)
         if not phone_norm:
-            skipped += 1
+            skipped_no_phone += 1
+            if len(sample_errors) < 3:
+                sample_errors.append(f"row {idx + 1}: missing/invalid phone (looking in column '{phone_key}')")
             continue
         exists = await v3_col("leads").find_one({"phone_normalized": phone_norm}, {"_id": 0, "id": 1})
         if exists:
-            skipped += 1
+            skipped_duplicate += 1
+            if len(sample_errors) < 3:
+                sample_errors.append(f"row {idx + 1}: duplicate phone {phone_raw}")
             continue
 
         std_payload: Dict[str, Any] = {}
@@ -409,24 +426,25 @@ async def sync_source(source_id: str, payload: MarketingSyncInput, _: V3UserOut 
                 std_payload[std] = row[src_key]
 
         custom_payload: Dict[str, Any] = {}
+        mapped_values = set(mapping.values())
         for key, value in row.items():
-            if key not in mapping.values() and value not in (None, ""):
+            if key not in mapped_values and value not in (None, ""):
                 custom_payload[key] = value
 
         assigned = await round_robin_assign("pre_sales")
         lead = {
             "id": str(uuid.uuid4()),
-            "name": std_payload.get("name", "Unknown"),
+            "name": (std_payload.get("name") or "").strip() or "Unknown",
             "phone": phone_raw,
             "phone_normalized": phone_norm,
             "email": std_payload.get("email", ""),
-            "vertical": std_payload.get("vertical", "offline_physiotherapy"),
+            "vertical": std_payload.get("vertical") or "offline_physiotherapy",
             "source_tab": source["name"],
             "source_type": source.get("source_type", "google_sheets"),
             "stage": "New Lead",
             "branch_id": None,
             "notes": std_payload.get("notes", ""),
-            "extra_fields": {**{k: v for k, v in std_payload.items() if k not in ("name", "email", "vertical", "notes")}, **custom_payload},
+            "extra_fields": {**{k: v for k, v in std_payload.items() if k not in ("name", "email", "phone", "vertical", "notes")}, **custom_payload},
             "assigned_user_id": assigned["id"] if assigned else None,
             "assigned_user_name": assigned["full_name"] if assigned else None,
             "assigned_user_role": "pre_sales" if assigned else None,
@@ -438,11 +456,23 @@ async def sync_source(source_id: str, payload: MarketingSyncInput, _: V3UserOut 
         imported += 1
 
     new_row_count = (source.get("row_count") or 0) + imported
-    await v3_col("marketing_sources").update_one(
-        {"id": source_id},
-        {"$set": {"last_synced": now_iso(), "row_count": new_row_count}},
-    )
-    return {"imported": imported, "skipped": skipped}
+    update = {"last_synced": now_iso(), "row_count": new_row_count}
+    # Persist the inferred mapping so future syncs reuse it
+    if mapping != (source.get("column_mapping") or {}):
+        update["column_mapping"] = mapping
+    await v3_col("marketing_sources").update_one({"id": source_id}, {"$set": update})
+
+    skipped = skipped_no_phone + skipped_duplicate
+    return {
+        "imported": imported,
+        "skipped": skipped,
+        "skipped_no_phone": skipped_no_phone,
+        "skipped_duplicate": skipped_duplicate,
+        "rows_received": len(payload.rows),
+        "phone_column_used": phone_key,
+        "mapping_used": mapping,
+        "sample_errors": sample_errors,
+    }
 
 
 # ============ performance ============

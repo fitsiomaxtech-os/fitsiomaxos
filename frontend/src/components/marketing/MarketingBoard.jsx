@@ -114,7 +114,8 @@ const SourcesTab = () => {
   const [showSync, setShowSync] = useState(null);
   const [showMap, setShowMap] = useState(null);
   const [form, setForm] = useState({ name: "", sheet_url: "", source_type: "google_sheets", headers: "" });
-  const [syncRows, setSyncRows] = useState("[{\"name\":\"Aarav\",\"phone\":\"9000000001\",\"email\":\"aarav@x.com\",\"vertical\":\"offline_physiotherapy\"}]");
+  const [syncRows, setSyncRows] = useState(`[\n  {"name":"Aarav Sharma","phone":"9000000001","email":"aarav@example.com","city":"Chennai","condition":"Lower back pain","age":34},\n  {"name":"Meera Iyer","phone":"9000000002","email":"meera@example.com","city":"Coimbatore","condition":"Knee pain","age":28}\n]`);
+  const [syncResult, setSyncResult] = useState(null);
 
   const load = useCallback(() => mkGetSources().then(setSources).catch((e) => console.warn("[load failed]", e?.message || e)), []);
   useEffect(() => { load(); }, [load]);
@@ -134,11 +135,19 @@ const SourcesTab = () => {
   const runSync = async () => {
     try {
       const rows = JSON.parse(syncRows);
+      if (!Array.isArray(rows)) { toast.error("JSON must be an array of objects"); return; }
       const res = await mkSyncSource(showSync.id, rows);
-      toast.success(`Synced: imported ${res.imported}, skipped ${res.skipped}`);
-      setShowSync(null);
+      setSyncResult(res);
+      if (res.imported > 0) {
+        toast.success(`Imported ${res.imported} · skipped ${res.skipped} (received ${res.rows_received}). Refresh Pre-Sales CRM to see them.`);
+      } else {
+        toast.error(`No leads imported. ${res.skipped_no_phone || 0} missing phone · ${res.skipped_duplicate || 0} duplicate. See details panel.`);
+      }
       load();
-    } catch (e) { toast.error(e?.response?.data?.detail || "Sync failed — verify JSON"); }
+    } catch (e) {
+      if (e instanceof SyntaxError) { toast.error("Invalid JSON. Paste rows as a [ { ... }, ... ] array."); return; }
+      toast.error(e?.response?.data?.detail || "Sync failed");
+    }
   };
 
   const toggleActive = async (s) => {
@@ -201,8 +210,8 @@ const SourcesTab = () => {
       )}
 
       {showSync && (
-        <DialogShell title={`Sync: ${showSync.name}`} onClose={() => setShowSync(null)} testid="mk-sync-dialog">
-          <p className="text-xs text-slate-500">Paste JSON rows. Phones are deduped by last 10 digits. New leads are auto-distributed via round-robin.</p>
+        <DialogShell title={`Sync: ${showSync.name}`} onClose={() => { setShowSync(null); setSyncResult(null); }} testid="mk-sync-dialog">
+          <p className="text-xs text-slate-500">Paste JSON rows from your Google Sheet (each row = one object). Phones are deduped by last 10 digits. New leads land in <span className="font-semibold">Pre-Sales CRM</span> + Marketing Board → All Leads with auto round-robin if enabled.</p>
           <textarea
             value={syncRows}
             onChange={(e) => setSyncRows(e.target.value)}
@@ -210,6 +219,20 @@ const SourcesTab = () => {
             data-testid="mk-sync-rows-textarea"
           />
           <Button onClick={runSync} className="w-full" data-testid="mk-sync-submit"><RefreshCw className="mr-1 h-4 w-4" />Run Sync</Button>
+          {syncResult && (
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs space-y-1" data-testid="mk-sync-result">
+              <p><span className="font-semibold text-emerald-600">{syncResult.imported}</span> imported · <span className="font-semibold text-amber-600">{syncResult.skipped_no_phone || 0}</span> missing phone · <span className="font-semibold text-slate-600">{syncResult.skipped_duplicate || 0}</span> duplicates (of <span className="font-semibold">{syncResult.rows_received}</span> rows)</p>
+              <p className="text-slate-500">Phone column used: <code className="rounded bg-slate-200 px-1 text-[10px]">{syncResult.phone_column_used}</code></p>
+              {syncResult.mapping_used && Object.keys(syncResult.mapping_used).length > 0 && (
+                <p className="text-slate-500">Field mapping: {Object.entries(syncResult.mapping_used).map(([k, v]) => <code key={k} className="mr-1 rounded bg-slate-200 px-1 text-[10px]">{k}={v}</code>)}</p>
+              )}
+              {(syncResult.sample_errors || []).length > 0 && (
+                <ul className="ml-3 list-disc text-red-600">
+                  {syncResult.sample_errors.map((m, i) => <li key={i}>{m}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
         </DialogShell>
       )}
 
