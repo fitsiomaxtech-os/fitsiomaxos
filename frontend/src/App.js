@@ -4,6 +4,7 @@ import "@/App.css";
 import { LoginPage } from "@/pages/LoginPage";
 import { CRMPage } from "@/pages/CRMPage";
 import { clearSession, loadSession, saveSession } from "@/lib/session";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 function App() {
   const [auth, setAuth] = useState(loadSession());
@@ -22,6 +23,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <ThemeToggle />
       <Routes>
         <Route
           path="/"
