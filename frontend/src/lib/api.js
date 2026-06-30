@@ -1,10 +1,8 @@
 import axios from "axios";
 import { loadSession, clearSession } from "@/lib/session";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-
 const api = axios.create({
-  baseURL: `${BACKEND_URL}/api/v3`,
+  baseURL: "/api/v3",
 });
 
 api.interceptors.request.use((config) => {
