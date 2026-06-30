@@ -1,0 +1,50 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            set -e
+
+            APP_DIR="/root/projects/fitsiomaxos"
+            cd "$APP_DIR"
+
+            git fetch origin main
+            git reset --hard origin/main
+
+            cd "$APP_DIR/frontend"
+            npm ci
+            npm run build
+
+            cd "$APP_DIR/backend"
+            if [ -x ".venv/bin/pip" ]; then
+              .venv/bin/pip install -r requirements.txt
+            elif [ -x "venv/bin/pip" ]; then
+              venv/bin/pip install -r requirements.txt
+            else
+              python3 -m pip install -r requirements.txt
+            fi
+
+            if command -v pm2 >/dev/null 2>&1; then
+              pm2 restart backend || pm2 restart all
+              pm2 save || true
+            fi
+
+            if command -v nginx >/dev/null 2>&1; then
+              nginx -t
+              systemctl reload nginx || true
+            fi
