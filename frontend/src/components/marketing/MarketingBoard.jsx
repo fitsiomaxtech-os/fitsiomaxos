@@ -47,9 +47,26 @@ const TabBtn = ({ active, label, Icon, onClick, testid }) => (
 
 const OverviewTab = ({ branches }) => {
   const [data, setData] = useState(null);
-  useEffect(() => {
+  const [deletingId, setDeletingId] = useState(null);
+  const load = useCallback(() => {
     mkDashboard().then(setData).catch(() => toast.error("Failed to load dashboard"));
   }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+  const remove = async (leadId) => {
+    if (!window.confirm("Delete this lead?")) return;
+    setDeletingId(leadId);
+    try {
+      await mkDeleteLead(leadId);
+      toast.success("Lead deleted");
+      load();
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Delete failed");
+    } finally {
+      setDeletingId(null);
+    }
+  };
   if (!data) return <p className="text-sm text-slate-500" data-testid="mk-overview-loading">Loading...</p>;
   const k = data.kpis;
   const maxBy = Math.max(...(data.by_source.map((r) => r.count) || [1]), 1);
@@ -85,7 +102,7 @@ const OverviewTab = ({ branches }) => {
           <div className="overflow-auto">
             <table className="min-w-full text-xs">
               <thead className="bg-slate-50 text-left text-slate-500">
-                <tr><th className="px-3 py-2">Name</th><th className="px-3 py-2">Source</th><th className="px-3 py-2">Stage</th><th className="px-3 py-2">Assigned</th><th className="px-3 py-2">Branch</th><th className="px-3 py-2">Created</th></tr>
+                <tr><th className="px-3 py-2">Name</th><th className="px-3 py-2">Source</th><th className="px-3 py-2">Stage</th><th className="px-3 py-2">Assigned</th><th className="px-3 py-2">Branch</th><th className="px-3 py-2">Created</th><th className="px-3 py-2 text-right">Actions</th></tr>
               </thead>
               <tbody>
                 {data.recent_leads.map((l) => (
@@ -96,6 +113,19 @@ const OverviewTab = ({ branches }) => {
                     <td className="px-3 py-2 text-slate-600">{l.assigned_user_name || "—"}</td>
                     <td className="px-3 py-2 text-slate-500">{branches.find((b) => b.id === l.branch_id)?.branch_name || "—"}</td>
                     <td className="px-3 py-2 text-slate-400">{(l.created_at || "").slice(0, 10)}</td>
+                    <td className="px-3 py-2 text-right">
+                      <button
+                        type="button"
+                        onClick={() => remove(l.id)}
+                        disabled={deletingId === l.id}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-500 transition hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        title="Delete lead"
+                        aria-label={`Delete ${l.name || "lead"}`}
+                        data-testid={`mk-recent-delete-${l.id}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
