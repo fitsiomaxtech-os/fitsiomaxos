@@ -785,8 +785,14 @@ function LeadMasterTab({
             <option key={b.id} value={b.id}>{b.branch_name}</option>
           ))}
         </select>
-        <Input type="date" value={leadDateFrom} onChange={(e) => setLeadDateFrom(e.target.value)} data-testid="bd-lead-date-from" />
-        <Input type="date" value={leadDateTo} onChange={(e) => setLeadDateTo(e.target.value)} data-testid="bd-lead-date-to" />
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-slate-500">From</span>
+          <Input type="date" value={leadDateFrom} onChange={(e) => setLeadDateFrom(e.target.value)} data-testid="bd-lead-date-from" />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-slate-500">To</span>
+          <Input type="date" value={leadDateTo} onChange={(e) => setLeadDateTo(e.target.value)} data-testid="bd-lead-date-to" />
+        </div>
       </div>
 
       {/* Lead Table */}

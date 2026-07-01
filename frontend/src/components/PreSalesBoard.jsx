@@ -202,6 +202,7 @@ export const PreSalesBoard = () => {
       {/* Date Filter (collapsible) */}
       {showDateFilter && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3" data-testid="presales-date-filter">
+          <span className="text-xs font-medium text-slate-500">From</span>
           <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40" data-testid="presales-date-from" />
           <span className="text-xs text-slate-400">to</span>
           <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-40" data-testid="presales-date-to" />
