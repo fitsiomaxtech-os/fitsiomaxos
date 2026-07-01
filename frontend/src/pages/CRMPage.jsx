@@ -16,6 +16,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   addDoctorSlots,
   apiLogout,
@@ -601,6 +602,7 @@ export const CRMPage = ({ auth, onLogout }) => {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <ThemeToggle />
               <span className="text-sm font-medium text-sky-700" data-testid="role-board-user-greeting">Hi {auth.user.full_name?.split(" ")[0]}</span>
               <Button
                 variant="outline"
