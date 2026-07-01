@@ -56,6 +56,7 @@ jobs:
             if command -v pm2 >/dev/null 2>&1; then
               pm2 restart backend || true
               pm2 restart frontend || true
+              pm2 restart all || true
               pm2 save || true
             fi
 
