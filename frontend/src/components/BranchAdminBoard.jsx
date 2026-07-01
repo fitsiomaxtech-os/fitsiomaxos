@@ -152,22 +152,28 @@ export const BranchAdminBoard = ({ branchId }) => {
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
           <Input className="pl-9" placeholder="Search patients..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} data-testid="branch-search" />
         </div>
-        <Input
-          type="date"
-          className="w-40"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          aria-label="Filter from date"
-          data-testid="branch-date-from"
-        />
-        <Input
-          type="date"
-          className="w-40"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          aria-label="Filter to date"
-          data-testid="branch-date-to"
-        />
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-slate-500">From</span>
+          <Input
+            type="date"
+            className="w-40"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            aria-label="Filter from date"
+            data-testid="branch-date-from"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-slate-500">To</span>
+          <Input
+            type="date"
+            className="w-40"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            aria-label="Filter to date"
+            data-testid="branch-date-to"
+          />
+        </div>
         <Button size="sm" variant="outline" onClick={loadBoard} data-testid="branch-refresh-btn">
           <RefreshCw className="mr-1 h-4 w-4" /> Refresh
         </Button>
