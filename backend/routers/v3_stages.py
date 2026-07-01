@@ -64,14 +64,54 @@ async def _ensure_seed() -> None:
         await v3_col("pipeline_stages").insert_many(docs)
 
 
+async def _dedupe_stage_rows(rows: List[dict], pipeline_type: Optional[str] = None) -> List[dict]:
+    if not pipeline_type:
+        return rows
+
+    stage_field = "stage" if pipeline_type == "pre_sales" else "branch_stage"
+    unique = []
+    by_name = {}
+    duplicates = []
+
+    for row in rows:
+        name = row.get("name")
+        if name not in by_name:
+            by_name[name] = row
+            unique.append(row)
+        else:
+            duplicates.append(row)
+
+    if not duplicates:
+        return rows
+
+    counts = {}
+    async for row in v3_col("leads").aggregate([
+        {"$group": {"_id": f"${stage_field}", "n": {"$sum": 1}}},
+    ]):
+        counts[row["_id"]] = row["n"]
+
+    for duplicate in duplicates:
+        if counts.get(duplicate.get("name"), 0) == 0:
+            await v3_col("pipeline_stages").delete_one({"id": duplicate["id"]})
+
+    for idx, row in enumerate(unique):
+        if row.get("order") != idx:
+            await v3_col("pipeline_stages").update_one({"id": row["id"]}, {"$set": {"order": idx}})
+            row["order"] = idx
+
+    return unique
+
+
 @router.get("")
 async def list_stages(type: Optional[Literal["pre_sales", "sales"]] = None, _: V3UserOut = Depends(v3_current_user)):
     await _ensure_seed()
     query = {"type": type} if type else {}
     rows = await v3_col("pipeline_stages").find(query, {"_id": 0}).sort([("type", 1), ("order", 1)]).to_list(500)
+    rows = await _dedupe_stage_rows(rows, type)
     counts = {}
     if type:
-        leads_pipeline = [{"$group": {"_id": "$stage", "n": {"$sum": 1}}}]
+        stage_field = "stage" if type == "pre_sales" else "branch_stage"
+        leads_pipeline = [{"$group": {"_id": f"${stage_field}", "n": {"$sum": 1}}}]
         async for row in v3_col("leads").aggregate(leads_pipeline):
             counts[row["_id"]] = row["n"]
     for r in rows:
@@ -82,6 +122,12 @@ async def list_stages(type: Optional[Literal["pre_sales", "sales"]] = None, _: V
 @router.post("")
 async def create_stage(payload: StageCreate, _: V3UserOut = Depends(v3_require_roles("super_admin"))):
     await _ensure_seed()
+    existing = await v3_col("pipeline_stages").find_one(
+        {"type": payload.type, "name": payload.name},
+        {"_id": 0, "id": 1},
+    )
+    if existing:
+        raise HTTPException(status_code=409, detail="Stage already exists in this pipeline.")
     last = await v3_col("pipeline_stages").find({"type": payload.type}, {"_id": 0, "order": 1}).sort("order", -1).limit(1).to_list(1)
     next_order = (last[0]["order"] + 1) if last else 0
     doc = {
@@ -106,6 +152,12 @@ async def update_stage(stage_id: str, payload: StageUpdate, _: V3UserOut = Depen
     if "name" in updates:
         old = await v3_col("pipeline_stages").find_one({"id": stage_id}, {"_id": 0, "name": 1, "type": 1})
         if old and old["name"] != updates["name"]:
+            duplicate = await v3_col("pipeline_stages").find_one(
+                {"id": {"$ne": stage_id}, "type": old["type"], "name": updates["name"]},
+                {"_id": 0, "id": 1},
+            )
+            if duplicate:
+                raise HTTPException(status_code=409, detail="Stage already exists in this pipeline.")
             field = "stage" if old["type"] == "pre_sales" else "branch_stage"
             await v3_col("leads").update_many({field: old["name"]}, {"$set": {field: updates["name"]}})
     res = await v3_col("pipeline_stages").update_one({"id": stage_id}, {"$set": updates})
