@@ -32,6 +32,18 @@ jobs:
             npm ci --legacy-peer-deps
             npm run build
 
+            WEB_ROOT=""
+            if command -v nginx >/dev/null 2>&1; then
+              WEB_ROOT="$(nginx -T 2>/dev/null | awk '$1 == "root" { gsub(";", "", $2); print $2 }' | grep -E '/frontend/build|/var/www|/usr/share/nginx/html' | head -n 1 || true)"
+            fi
+            if [ -n "$WEB_ROOT" ] && [ "$WEB_ROOT" != "$APP_DIR/frontend/build" ]; then
+              echo "Copying frontend build to Nginx root: $WEB_ROOT"
+              mkdir -p "$WEB_ROOT"
+              cp -a "$APP_DIR/frontend/build/." "$WEB_ROOT/"
+            else
+              echo "Nginx root already points to repo build folder or was not detected."
+            fi
+
             cd "$APP_DIR/backend"
             if [ -x ".venv/bin/pip" ]; then
               .venv/bin/pip install -r requirements.txt
@@ -42,7 +54,8 @@ jobs:
             fi
 
             if command -v pm2 >/dev/null 2>&1; then
-              pm2 restart backend || pm2 restart all
+              pm2 restart backend || true
+              pm2 restart frontend || true
               pm2 save || true
             fi
 
