@@ -68,7 +68,6 @@ const PIPELINE_STAGES = [
   "New Lead",
   "Pre-sales Qualified",
   "Assigned to Branch",
-  "Branch Confirmed",
   "Appointment Booked",
   "Completed",
 ];
@@ -91,12 +90,6 @@ const STAGE_THEME = {
     inactive: "border-violet-200 bg-white text-violet-700",
     column: "border-violet-200 bg-violet-50",
     metric: "text-violet-600",
-  },
-  "Branch Confirmed": {
-    active: "border-teal-300 bg-teal-50 text-teal-700",
-    inactive: "border-teal-200 bg-white text-teal-700",
-    column: "border-teal-200 bg-teal-50",
-    metric: "text-teal-600",
   },
   "Appointment Booked": {
     active: "border-green-300 bg-green-50 text-green-700",

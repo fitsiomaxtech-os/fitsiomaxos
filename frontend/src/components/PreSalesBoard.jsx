@@ -43,7 +43,6 @@ const PIPELINE_STAGES = [
   "New Lead",
   "Pre-sales Qualified",
   "Assigned to Branch",
-  "Branch Confirmed",
   "Appointment Booked",
   "Completed",
 ];
@@ -52,7 +51,6 @@ const STAGE_COLORS = {
   "New Lead": { bg: "bg-blue-500", light: "bg-blue-50 text-blue-700 border-blue-200", col: "border-blue-200 bg-blue-50/50" },
   "Pre-sales Qualified": { bg: "bg-amber-500", light: "bg-amber-50 text-amber-700 border-amber-200", col: "border-amber-200 bg-amber-50/50" },
   "Assigned to Branch": { bg: "bg-violet-500", light: "bg-violet-50 text-violet-700 border-violet-200", col: "border-violet-200 bg-violet-50/50" },
-  "Branch Confirmed": { bg: "bg-teal-500", light: "bg-teal-50 text-teal-700 border-teal-200", col: "border-teal-200 bg-teal-50/50" },
   "Appointment Booked": { bg: "bg-green-500", light: "bg-green-50 text-green-700 border-green-200", col: "border-green-200 bg-green-50/50" },
   Completed: { bg: "bg-emerald-500", light: "bg-emerald-50 text-emerald-700 border-emerald-200", col: "border-emerald-200 bg-emerald-50/50" },
 };
