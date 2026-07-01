@@ -60,6 +60,8 @@ export const BranchAdminBoard = ({ branchId }) => {
   const [boardData, setBoardData] = useState({ leads: [], stage_counts: {} });
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [selectedLead, setSelectedLead] = useState(null);
   const [activeView, setActiveView] = useState("pipeline");
 
@@ -76,12 +78,13 @@ export const BranchAdminBoard = ({ branchId }) => {
   useEffect(() => { loadBoard(); }, [loadBoard]);
 
   const filteredLeads = useMemo(() => {
-    if (!searchQuery.trim()) return boardData.leads;
     const q = searchQuery.toLowerCase();
     return boardData.leads.filter((l) =>
-      l.name?.toLowerCase().includes(q) || l.phone?.includes(q) || l.email?.toLowerCase().includes(q)
+      (!q.trim() || l.name?.toLowerCase().includes(q) || l.phone?.includes(q) || l.email?.toLowerCase().includes(q)) &&
+      (!dateFrom || (l.expected_consultation_date || l.created_at || "").slice(0, 10) >= dateFrom) &&
+      (!dateTo || (l.expected_consultation_date || l.created_at || "").slice(0, 10) <= dateTo)
     );
-  }, [boardData.leads, searchQuery]);
+  }, [boardData.leads, dateFrom, dateTo, searchQuery]);
 
   const totalLeads = boardData.leads.length;
 
@@ -149,6 +152,22 @@ export const BranchAdminBoard = ({ branchId }) => {
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
           <Input className="pl-9" placeholder="Search patients..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} data-testid="branch-search" />
         </div>
+        <Input
+          type="date"
+          className="w-40"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          aria-label="Filter from date"
+          data-testid="branch-date-from"
+        />
+        <Input
+          type="date"
+          className="w-40"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          aria-label="Filter to date"
+          data-testid="branch-date-to"
+        />
         <Button size="sm" variant="outline" onClick={loadBoard} data-testid="branch-refresh-btn">
           <RefreshCw className="mr-1 h-4 w-4" /> Refresh
         </Button>
